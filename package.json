@@ -9,11 +9,12 @@
     "backup": "node scripts/backup-db.js"
   },
   "dependencies": {
-    "express": "^4.21.0",
-    "sql.js": "^1.11.0",
+    "@libsql/client": "^0.18.0",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
+    "express": "^4.21.0",
+    "express-rate-limit": "^7.4.0",
     "helmet": "^8.0.0",
-    "express-rate-limit": "^7.4.0"
+    "sql.js": "^1.11.0"
   }
 }

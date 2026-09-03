@@ -18,15 +18,16 @@ npm start
 
 ```
 ├── server.js          # Serveur Express (API REST)
-├── database.js        # Base de données SQLite (sql.js)
+├── database.js        # Base de données : Turso (Vercel) ou SQLite locale (sql.js)
 ├── package.json       # Dépendances Node.js
-├── ecosystem.config.js# Configuration PM2 (production)
+├── vercel.json        # Configuration de déploiement Vercel (serverless)
+├── ecosystem.config.js# Configuration PM2 (production VPS)
 ├── .env.example       # Variables d'environnement (copier vers .env)
 ├── deploy/
 │   └── nginx-cnh.conf # Exemple de reverse proxy Nginx
 ├── scripts/
 │   └── backup-db.js   # Sauvegarde DB + rétention (npm run backup)
-├── cnh_service.db     # Base de données (auto-générée)
+├── cnh_service.db     # Base de données locale (auto-générée, hors Vercel)
 ├── public/
 │   ├── index.html     # Site principal
 │   ├── reservation.html  # Page de réservation avec calendrier
@@ -72,12 +73,25 @@ npm start
 |---------|-------|-------------|
 | GET | `/api/stats/dashboard` | Statistiques (admin) |
 | POST | `/api/stats/visit` | Enregistrer une visite |
+| GET | `/api/stats/public` | Compteurs publics (voitures lavées, note) |
 | GET | `/api/settings` | Paramètres publics |
 | PUT | `/api/settings` | Modifier les paramètres (admin) |
 
+### Témoignages
+| Méthode | Route | Description |
+|---------|-------|-------------|
+| GET | `/api/testimonials` | Témoignages approuvés (public) |
+| POST | `/api/testimonials` | Soumettre un témoignage (modération) |
+| GET | `/api/testimonials/admin` | Lister tous les témoignages (admin) |
+| PATCH | `/api/testimonials/:id` | Approuver / masquer (admin) |
+| DELETE | `/api/testimonials/:id` | Supprimer (admin) |
+
 ## 🗄️ Base de données
 
-SQLite via sql.js (pure JavaScript, pas de compilation native nécessaire).
+Deux modes, détectés automatiquement dans `database.js` :
+
+- **Turso** (libSQL/SQLite managé) — activé quand `TURSO_DATABASE_URL` et `TURSO_AUTH_TOKEN` sont définis. **Requis sur Vercel**, où le filesystem est éphémère et en lecture seule. La base persiste côté Turso, et les sessions admin sont stockées en base pour survivre aux cold starts serverless.
+- **Local** (sql.js) — mode par défaut (dev / VPS). La base `cnh_service.db` est sauvegardée automatiquement toutes les 30 secondes.
 
 Tables :
 - `admin_users` — Utilisateurs administrateurs
@@ -85,9 +99,8 @@ Tables :
 - `reservations` — Réservations en ligne
 - `settings` — Paramètres du site
 - `stats` — Statistiques de visite
-- `testimonials` — Témoignages clients
-
-La base de données est sauvegardée automatiquement toutes les 30 secondes dans `cnh_service.db`.
+- `testimonials` — Témoignages clients (modérés)
+- `sessions` — Tokens de session admin (persistants)
 
 ## 🌐 Déploiement (VPS Linux + PM2 + Nginx)
 
@@ -151,3 +164,26 @@ Conseils :
 - Ouvrir `https://www.cnhservice.com` et `/admin`
 - Si vous fixez `CORS_ORIGIN` dans `.env`, seuls ces domaines sont autorisés via l'API
 - Firewall : n'ouvrir que les ports 80 et 443 (le port Node reste interne)
+
+## ▲ Déploiement Vercel (serverless + Turso)
+
+### 1. Créer une base Turso
+```bash
+# Installer l'outil Turso puis créer une base (gratuit pour démarrer)
+npm install -g @libsql/cli     # ou: curl -sSfL https://get.tur.so/install.sh | bash
+turso auth login
+turso db create cnh-service
+turso db show cnh-service      # récupérer l'URL (libsql://cnh-service-xxxx.turso.io)
+turso db tokens create cnh-service   # récupérer le token d'accès
+```
+
+### 2. Connecter le dépôt sur Vercel
+1. Importer le dépôt GitHub sur https://vercel.com (framework : **Other**).
+2. Ajouter les variables d'environnement :
+   - `TURSO_DATABASE_URL` → l'URL `libsql://...` de la base
+   - `TURSO_AUTH_TOKEN` → le token généré
+   - (optionnel) `CORS_ORIGIN` → ex. `https://www.cnhservice.com`
+3. Déployer. `vercel.json` route toutes les requêtes vers `server.js` (les sessions et les données vivent dans Turso, pas sur le filesystem).
+4. Ouvrir `https://<projet>.vercel.app/admin` — l'admin par défaut est `admin` / `cnh2026` (à changer ensuite dans la table `admin_users`).
+
+> Les fichiers `cnh_service.db`, `backups/` et le script `scripts/backup-db.js` ne servent qu'en mode local/VPS : sur Vercel, les sauvegardes sont gérées par Turso.
