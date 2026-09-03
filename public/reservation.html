@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Réservation | CNH Service - Lavage Auto à Domicile</title>
+    <meta name="description" content="Réservez votre lavage auto à domicile avec CNH Service. Choisissez votre forfait, date et créneau horaire en quelques clics.">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='15' fill='%230ea5e9'/><text x='16' y='22' text-anchor='middle' fill='white' font-size='16' font-weight='bold' font-family='Arial'>C</text></svg>">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+        html{scroll-behavior:smooth}
+        body{font-family:'Inter',sans-serif;font-size:16px;line-height:1.6;color:#1e293b;background:linear-gradient(180deg,#f0f9ff 0%,#f8fafc 30%,#f1f5f9 100%);min-height:100vh}
+        :root{--blue:#0ea5e9;--blue-dark:#0284c7;--blue-deeper:#0369a1;--blue-light:#e0f2fe;--navy:#0f172a;--slate:#1e293b;--gray-100:#f1f5f9;--gray-200:#e2e8f0;--gray-300:#cbd5e1;--gray-400:#94a3b8;--gray-500:#64748b;--white:#fff;--green:#10b981;--green-dark:#059669;--red:#ef4444;--amber:#f59e0b;--shadow-sm:0 1px 3px rgba(0,0,0,.06);--shadow-md:0 4px 16px rgba(0,0,0,.08);--shadow-lg:0 10px 30px rgba(0,0,0,.1);--shadow-xl:0 20px 50px rgba(0,0,0,.12);--radius:12px;--radius-lg:16px;--transition:.3s cubic-bezier(.4,0,.2,1)}
+
+        .container{width:100%;max-width:880px;margin:0 auto;padding:0 16px}
+        h1,h2,h3{font-weight:700;line-height:1.2}
+        a{text-decoration:none;color:var(--blue)}
+
+        /* ── Logo ── */
+        .logo-svg{display:flex;align-items:center;gap:10px;text-decoration:none}
+        .logo-svg .logo-icon{width:38px;height:38px;flex-shrink:0}
+        .logo-svg .logo-text{font-size:1.1rem;font-weight:800;color:var(--navy);line-height:1.1;letter-spacing:-.5px}
+        .logo-svg .logo-text span{display:block;font-size:.6rem;font-weight:500;color:var(--gray-400);letter-spacing:.5px;text-transform:uppercase}
+
+        /* ── Buttons ── */
+        .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:14px 28px;border-radius:50px;text-decoration:none;font-weight:600;font-size:.95rem;transition:all .3s cubic-bezier(.4,0,.2,1);border:none;cursor:pointer;font-family:'Inter',sans-serif;position:relative;overflow:hidden}
+        .btn::after{content:'';position:absolute;inset:0;background:linear-gradient(120deg,transparent,rgba(255,255,255,.15),transparent);transform:translateX(-100%);transition:transform .5s ease}
+        .btn:hover::after{transform:translateX(100%)}
+        .btn-primary{background:linear-gradient(135deg,var(--blue),var(--blue-dark));color:var(--white);box-shadow:0 4px 14px rgba(14,165,233,.3)}
+        .btn-primary:hover{transform:translateY(-3px);box-shadow:0 8px 25px rgba(14,165,233,.4)}.btn-primary:active{transform:translateY(-1px)}.btn-primary:disabled{opacity:.6;cursor:not-allowed;transform:none}
+        .btn-outline{background:transparent;color:var(--slate);border:2px solid var(--gray-200)}.btn-outline:hover{border-color:var(--blue);color:var(--blue);transform:translateY(-2px)}
+        .btn-block{width:100%}
+
+        /* ── Top Bar ── */
+        .top-bar{background:rgba(255,255,255,.97);backdrop-filter:blur(20px) saturate(180%);border-bottom:1px solid var(--gray-200);padding:14px 0;position:sticky;top:0;z-index:100;transition:box-shadow .3s ease}
+        .top-bar.scrolled{box-shadow:0 1px 16px rgba(0,0,0,.06)}
+        .top-bar .container{display:flex;justify-content:space-between;align-items:center}
+        .top-bar a.back-link{font-weight:600;font-size:.9rem;color:var(--slate);transition:all .3s ease;display:flex;align-items:center;gap:6px}.top-bar a.back-link:hover{color:var(--blue);transform:translateX(-3px)}
+
+        /* ── Page Header ── */
+        .page-header{text-align:center;padding:40px 0 0;animation:fadeSlideUp .6s ease}
+        .page-header h1{font-size:clamp(1.5rem,3.5vw,2rem);color:var(--slate);margin-bottom:6px;letter-spacing:-.5px}
+        .page-header p{color:var(--gray-500);font-size:1rem}
+
+        /* ── Banner image ── */
+        .res-banner{position:relative;border-radius:20px;overflow:hidden;height:190px;margin:32px 0 2px;background:url('https://images.unsplash.com/photo-1689182358896-2514cd65dfff?w=1600&q=80') center/cover no-repeat;box-shadow:var(--shadow-lg);animation:fadeScale .5s ease .15s both}
+        .res-banner::after{content:'';position:absolute;inset:0;background:linear-gradient(115deg,rgba(2,44,74,.78),rgba(2,44,74,.2) 62%,transparent)}
+        .res-banner-content{position:relative;z-index:1;height:100%;display:flex;flex-direction:column;justify-content:center;align-items:flex-start;padding:24px 30px;color:var(--white)}
+        .res-banner-content .tag{display:inline-flex;align-items:center;gap:8px;background:rgba(14,165,233,.92);padding:6px 14px;border-radius:20px;font-size:.74rem;font-weight:700;margin-bottom:12px;letter-spacing:.3px}
+        .res-banner-content strong{font-size:clamp(1.15rem,3vw,1.5rem);font-weight:800;line-height:1.25;text-shadow:0 2px 12px rgba(2,6,23,.4)}
+        .res-banner-content span{font-size:.85rem;opacity:.95;margin-top:8px;display:flex;align-items:center;gap:8px}
+        @media(max-width:600px){.res-banner{height:170px;margin-top:24px}.res-banner-content{padding:18px 20px}.res-banner-content span{font-size:.78rem}}
+
+        @keyframes fadeSlideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+        @keyframes fadeScale{from{opacity:0;transform:scale(.95)}to{opacity:1;transform:scale(1)}}
+
+        /* ── Steps Indicator ── */
+        .steps-bar{display:flex;justify-content:center;gap:0;margin:32px 0 40px;flex-wrap:wrap}
+        .step-item{display:flex;align-items:center;gap:8px;padding:10px 18px;font-size:.85rem;font-weight:600;color:var(--gray-400);transition:all .3s ease;border-radius:50px}
+        .step-item.active{color:var(--blue);background:var(--blue-light)}
+        .step-item.done{color:var(--green)}
+        .step-item .num{width:30px;height:30px;border-radius:50%;background:var(--gray-200);color:var(--gray-400);display:flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:700;transition:all .3s ease}
+        .step-item.active .num{background:linear-gradient(135deg,var(--blue),var(--blue-dark));color:var(--white);box-shadow:0 3px 10px rgba(14,165,233,.3)}
+        .step-item.done .num{background:var(--green);color:var(--white)}
+        .step-item .line{width:36px;height:2px;background:var(--gray-200);transition:background .3s ease}
+        .step-item.done .line{background:var(--green)}
+
+        /* ── Form Card ── */
+        .form-card{background:var(--white);border-radius:var(--radius-lg);box-shadow:var(--shadow-lg);padding:36px;margin-bottom:24px;animation:fadeScale .5s ease;border:1px solid rgba(255,255,255,.8);transition:box-shadow .3s ease}
+        .form-card:hover{box-shadow:var(--shadow-xl)}
+        .form-card h2{font-size:1.4rem;color:var(--slate);margin-bottom:4px}
+        .form-card .subtitle{color:var(--gray-500);font-size:.9rem;margin-bottom:28px}
+        .form-group{margin-bottom:20px}.form-group label{display:block;margin-bottom:6px;font-weight:600;font-size:.85rem;color:var(--slate)}
+        .form-group input,.form-group select,.form-group textarea{width:100%;padding:13px 16px;border:2px solid var(--gray-200);border-radius:12px;font-family:'Inter',sans-serif;font-size:.9rem;transition:all .3s ease;background:var(--gray-100)}
+        .form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--blue);outline:none;box-shadow:0 0 0 4px rgba(14,165,233,.1);background:var(--white)}
+        .form-row{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+        .form-row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+        .required::after{content:' *';color:var(--red);font-weight:700}
+
+        /* ── Service Cards ── */
+        .svc-card{padding:18px;border:2px solid var(--gray-200);border-radius:14px;cursor:pointer;transition:all .3s cubic-bezier(.4,0,.2,1);background:var(--white)}
+        .svc-card:hover{border-color:rgba(14,165,233,.3);transform:translateY(-3px);box-shadow:0 6px 20px rgba(0,0,0,.06)}
+        .svc-card.selected{border-color:var(--blue);background:linear-gradient(135deg,rgba(14,165,233,.04),rgba(14,165,233,.02));box-shadow:0 4px 16px rgba(14,165,233,.12)}
+        .svc-card .svc-head{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+        .svc-card .svc-head i{color:var(--blue);font-size:1.15rem}
+        .svc-card .svc-head strong{color:var(--slate);font-size:.95rem}
+        .svc-card .svc-desc{font-size:.8rem;color:var(--gray-500);margin-bottom:8px}
+        .svc-card .svc-price{font-size:1.2rem;font-weight:800;color:var(--blue)}
+
+        /* ── Calendar ── */
+        .calendar-wrapper{margin-bottom:20px}
+        .calendar-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+        .calendar-header h3{font-size:1.15rem;color:var(--slate)}
+        .cal-nav{background:var(--white);border:2px solid var(--gray-200);border-radius:10px;padding:10px 14px;cursor:pointer;font-size:1rem;color:var(--slate);transition:all .3s ease}
+        .cal-nav:hover{background:var(--blue-light);border-color:var(--blue);color:var(--blue)}
+        .calendar-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;text-align:center}
+        .cal-day-name{font-size:.75rem;font-weight:700;color:var(--gray-400);padding:10px 0;text-transform:uppercase;letter-spacing:.5px}
+        .cal-day{padding:12px 6px;border-radius:10px;font-size:.88rem;font-weight:500;color:var(--slate);cursor:pointer;transition:all .25s ease;position:relative}
+        .cal-day:hover:not(.disabled):not(.empty){background:var(--blue-light);color:var(--blue);transform:scale(1.08)}
+        .cal-day.selected{background:linear-gradient(135deg,var(--blue),var(--blue-dark));color:var(--white);font-weight:700;box-shadow:0 4px 12px rgba(14,165,233,.3)}
+        .cal-day.today{border:2px solid var(--blue);font-weight:700}
+        .cal-day.disabled{color:var(--gray-300);cursor:not-allowed;text-decoration:line-through}
+        .cal-day.empty{cursor:default}
+
+        /* ── Time Slots ── */
+        .slots-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:10px;margin-top:20px}
+        .slot{padding:12px 10px;border:2px solid var(--gray-200);border-radius:10px;text-align:center;font-size:.88rem;font-weight:600;color:var(--slate);cursor:pointer;transition:all .25s ease;background:var(--white)}
+        .slot:hover:not(.disabled){border-color:var(--blue);color:var(--blue);transform:translateY(-2px);box-shadow:0 4px 12px rgba(14,165,233,.1)}
+        .slot.selected{background:linear-gradient(135deg,var(--blue),var(--blue-dark));color:var(--white);border-color:var(--blue);box-shadow:0 4px 14px rgba(14,165,233,.3)}
+        .slot.disabled{background:var(--gray-100);color:var(--gray-300);cursor:not-allowed;text-decoration:line-through}
+
+        /* ── Summary ── */
+        .summary{background:linear-gradient(135deg,var(--gray-100),#e8f4fd);border-radius:var(--radius-lg);padding:28px;margin-top:28px;border:1px solid rgba(14,165,233,.08)}
+        .summary h3{font-size:1rem;color:var(--slate);margin-bottom:14px;display:flex;align-items:center;gap:8px}
+        .summary h3 i{color:var(--blue)}
+        .summary-row{display:flex;justify-content:space-between;padding:10px 0;font-size:.9rem;border-bottom:1px solid rgba(14,165,233,.08)}
+        .summary-row:last-child{border-bottom:none}.summary-row strong{color:var(--slate)}
+        .summary-row .val{color:var(--gray-500)}
+
+        /* ── Success ── */
+        .success-card{text-align:center;padding:56px 28px;animation:fadeScale .6s ease}
+        .success-icon{width:90px;height:90px;border-radius:50%;background:linear-gradient(135deg,rgba(16,185,129,.1),rgba(16,185,129,.05));color:var(--green);display:flex;align-items:center;justify-content:center;font-size:2.2rem;margin:0 auto 24px;animation:successPulse 2s ease infinite}
+        @keyframes successPulse{0%,100%{box-shadow:0 0 0 0 rgba(16,185,129,.15)}50%{box-shadow:0 0 0 20px rgba(16,185,129,0)}}
+        .success-card h2{font-size:1.7rem;color:var(--slate);margin-bottom:10px}
+        .success-card p{color:var(--gray-500);max-width:420px;margin:0 auto 28px;line-height:1.7}
+
+        /* ── Error ── */
+        .form-error{background:rgba(239,68,68,.08);color:var(--red);padding:14px 18px;border-radius:12px;font-size:.88rem;font-weight:500;margin-top:14px;display:none;animation:fadeSlideUp .3s ease}
+        .form-error.show{display:flex;align-items:center;gap:8px}
+
+        /* ── Footer ── */
+        .footer-mini{text-align:center;padding:28px 0;color:var(--gray-400);font-size:.8rem;border-top:1px solid var(--gray-200);margin-top:20px}
+
+        /* ── Responsive ── */
+        @media(max-width:600px){.form-row,.form-row-3{grid-template-columns:1fr}.calendar-grid{gap:2px}.cal-day{padding:10px 2px;font-size:.82rem}.slots-grid{grid-template-columns:repeat(3,1fr)}.top-bar .container{padding:0 12px}.form-card{padding:24px}}
+    </style>
+</head>
+<body>
+    <div class="top-bar" id="topBar">
+        <div class="container">
+            <a href="/" class="logo-svg">
+                <svg class="logo-icon" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect width="48" height="48" rx="14" fill="url(#logoGrad)"/>
+                    <path d="M12 32V16h4v12h8v4H12z" fill="white"/>
+                    <path d="M26 32V16l10 8-10 8z" fill="white" opacity=".85"/>
+                    <circle cx="36" cy="14" r="3" fill="#38bdf8"/>
+                    <defs><linearGradient id="logoGrad" x1="0" y1="0" x2="48" y2="48"><stop stop-color="#0ea5e9"/><stop offset="1" stop-color="#0369a1"/></linearGradient></defs>
+                </svg>
+                <div class="logo-text">CNH Service<span>Lavage Auto à Domicile</span></div>
+            </a>
+            <a href="/" class="back-link"><i class="fas fa-arrow-left"></i> Retour au site</a>
+        </div>
+    </div>
+
+    <div class="container" style="padding-top:16px;padding-bottom:40px">
+        <div class="page-header">
+            <h1>📅 Réservez votre lavage</h1>
+            <p>En quelques clics, votre voiture sera comme neuve.</p>
+        </div>
+
+        <div class="res-banner">
+            <div class="res-banner-content">
+                <div class="tag"><i class="fas fa-truck-moving"></i> Service à domicile</div>
+                <strong>Un professionnel se déplace chez vous,<br>avec tout l'équipement nécessaire.</strong>
+                <span><i class="fas fa-clock" style="color:var(--blue)"></i> Réservation en moins de 2 minutes</span>
+            </div>
+        </div>
+
+        <div class="steps-bar">
+            <div class="step-item active" id="step1Indicator"><div class="num">1</div> Service</div>
+            <div class="step-item" id="step2Indicator"><div class="line"></div><div class="num">2</div> Date & heure</div>
+            <div class="step-item" id="step3Indicator"><div class="line"></div><div class="num">3</div> Informations</div>
+        </div>
+
+        <!-- Step 1: Service Selection -->
+        <div class="form-card" id="step1">
+            <h2>Choisissez votre service</h2>
+            <p class="subtitle">Sélectionnez le forfait qui correspond à vos besoins.</p>
+            <div id="serviceCards" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px"></div>
+        </div>
+
+        <!-- Step 2: Date & Time -->
+        <div class="form-card" id="step2" style="display:none">
+            <h2>Choisissez la date et l'heure</h2>
+            <p class="subtitle">Sélectionnez un créneau disponible.</p>
+            <div class="calendar-wrapper">
+                <div class="calendar-header">
+                    <button class="cal-nav" id="prevMonth"><i class="fas fa-chevron-left"></i></button>
+                    <h3 id="calMonth"></h3>
+                    <button class="cal-nav" id="nextMonth"><i class="fas fa-chevron-right"></i></button>
+                </div>
+                <div class="calendar-grid" id="calGrid"></div>
+            </div>
+            <div id="slotsSection" style="display:none">
+                <h3 style="font-size:.95rem;color:var(--slate);margin-bottom:10px"><i class="fas fa-clock" style="color:var(--blue);margin-right:6px"></i> Créneaux disponibles pour le <span id="selectedDateText" style="color:var(--blue)"></span></h3>
+                <div class="slots-grid" id="slotsGrid"></div>
+            </div>
+            <div style="display:flex;gap:12px;margin-top:28px">
+                <button class="btn btn-outline" onclick="goToStep(1)"><i class="fas fa-arrow-left"></i> Retour</button>
+                <button class="btn btn-primary" id="step2Next" disabled onclick="goToStep(3)">Continuer <i class="fas fa-arrow-right"></i></button>
+            </div>
+        </div>
+
+        <!-- Step 3: Personal Info -->
+        <div class="form-card" id="step3" style="display:none">
+            <h2>Vos informations</h2>
+            <p class="subtitle">Remplissez vos coordonnées pour finaliser la réservation.</p>
+            <form id="reservationForm" novalidate>
+                <div class="form-row">
+                    <div class="form-group"><label class="required">Nom complet</label><input type="text" id="r_name" required placeholder="Votre nom"></div>
+                    <div class="form-group"><label class="required">Email</label><input type="email" id="r_email" required placeholder="votre@email.com"></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label class="required">Téléphone</label><input type="tel" id="r_phone" required placeholder="+1 450 123 4567"></div>
+                    <div class="form-group"><label class="required">Type de véhicule</label><select id="r_vehicle" required><option value="" disabled selected>Sélectionnez</option><option>Berline</option><option>SUV</option><option>Minivan</option><option>Camion / Pick-up</option><option>Coupé / Roadster</option><option>Autre</option></select></div>
+                </div>
+                <div class="form-group"><label>Plaque d'immatriculation (optionnel)</label><input type="text" id="r_plate" placeholder="ABC 1234"></div>
+                <div class="form-row">
+                    <div class="form-group"><label class="required">Adresse</label><input type="text" id="r_address" required placeholder="123 Rue Principale"></div>
+                    <div class="form-group"><label class="required">Ville</label><input type="text" id="r_city" required placeholder="Montréal"></div>
+                </div>
+                <div class="form-group"><label>Code postal (optionnel)</label><input type="text" id="r_postal" placeholder="H1A 1A1"></div>
+                <div class="form-group"><label>Notes ou demandes spéciales (optionnel)</label><textarea id="r_notes" rows="3" placeholder="Ex: stationnement, accès, préférences..."></textarea></div>
+
+                <div class="summary" id="reservationSummary">
+                    <h3><i class="fas fa-receipt"></i> Résumé de votre réservation</h3>
+                    <div class="summary-row"><span>Service</span><strong id="sumService">—</strong></div>
+                    <div class="summary-row"><span>Prix</span><strong id="sumPrice" style="color:var(--blue)">—</strong></div>
+                    <div class="summary-row"><span>Date</span><strong id="sumDate">—</strong></div>
+                    <div class="summary-row"><span>Heure</span><strong id="sumTime">—</strong></div>
+                </div>
+
+                <div class="form-error" id="resError"></div>
+
+                <div style="display:flex;gap:12px;margin-top:28px">
+                    <button type="button" class="btn btn-outline" onclick="goToStep(2)"><i class="fas fa-arrow-left"></i> Retour</button>
+                    <button type="submit" class="btn btn-primary btn-block" id="resSubmit"><i class="fas fa-check-circle"></i> Confirmer la réservation</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Step 4: Success -->
+        <div class="form-card" id="step4" style="display:none">
+            <div class="success-card">
+                <div class="success-icon"><i class="fas fa-check"></i></div>
+                <h2>Réservation confirmée ! 🎉</h2>
+                <p>Votre demande a été envoyée avec succès. Nous vous confirmerons votre réservation par email ou téléphone sous peu.</p>
+                <div class="summary" style="text-align:left;max-width:420px;margin:0 auto 28px">
+                    <h3><i class="fas fa-receipt"></i> Détails</h3>
+                    <div class="summary-row"><span>Réservation #</span><strong id="sumId">—</strong></div>
+                    <div class="summary-row"><span>Service</span><strong id="sumService2">—</strong></div>
+                    <div class="summary-row"><span>Date</span><strong id="sumDate2">—</strong></div>
+                    <div class="summary-row"><span>Heure</span><strong id="sumTime2">—</strong></div>
+                </div>
+                <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+                    <a href="/" class="btn btn-primary"><i class="fas fa-home"></i> Retour à l'accueil</a>
+                    <a href="/reservation" class="btn btn-outline" onclick="resetReservation()"><i class="fas fa-plus"></i> Nouvelle réservation</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer-mini">© 2026 CNH Service. Tous droits réservés.</div>
+
+    <script>
+    var API = '';
+    var services = [
+        { name: 'Lavage Extérieur', price: 35, icon: 'fa-spray-can-sparkles', desc: 'Carrosserie, jantes, pneus, vitres' },
+        { name: 'Lavage Intérieur', price: 45, icon: 'fa-couch', desc: 'Aspiration, tableau de bord, sièges' },
+        { name: 'Detailing Complet', price: 85, icon: 'fa-wand-magic-sparkles', desc: 'Extérieur + intérieur + cire' },
+        { name: 'Nettoyage Moteur', price: 55, icon: 'fa-gears', desc: 'Dégraissant professionnel' },
+        { name: 'Protection Cire', price: 65, icon: 'fa-shield-halved', desc: 'Cire haute protection' },
+        { name: 'Forfait Confort', price: 70, icon: 'fa-star', desc: 'Extérieur + intérieur standard' },
+        { name: 'Forfait Premium', price: 120, icon: 'fa-crown', desc: 'Service complet premium' }
+    ];
+
+    var selected = { service: null, price: null, date: null, time: null };
+    var calDate = new Date();
+
+    // ── Scroll shadow for top bar ──
+    window.addEventListener('scroll', function(){
+        document.getElementById('topBar').classList.toggle('scrolled', window.scrollY > 10);
+    });
+
+    // ── Render service cards ──
+    function renderServices() {
+        var html = '';
+        services.forEach(function(s) {
+            var sel = selected.service === s.name;
+            html += '<div class="svc-card' + (sel ? ' selected' : '') + '" onclick="selectService(\'' + s.name + '\',' + s.price + ')">';
+            html += '<div class="svc-head"><i class="fas ' + s.icon + '"></i><strong>' + s.name + '</strong></div>';
+            html += '<div class="svc-desc">' + s.desc + '</div>';
+            html += '<div class="svc-price">' + s.price + '$</div>';
+            html += '</div>';
+        });
+        document.getElementById('serviceCards').innerHTML = html;
+    }
+
+    function selectService(name, price) {
+        selected.service = name; selected.price = price;
+        renderServices();
+        setTimeout(function(){ goToStep(2); }, 350);
+    }
+
+    // ── Calendar ──
+    var monthNames = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+    var dayNames = ['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];
+
+    function renderCalendar() {
+        var year = calDate.getFullYear(), month = calDate.getMonth();
+        document.getElementById('calMonth').textContent = monthNames[month] + ' ' + year;
+        var firstDay = new Date(year, month, 1).getDay();
+        var daysInMonth = new Date(year, month + 1, 0).getDate();
+        var today = new Date(); today.setHours(0,0,0,0);
+        var html = '';
+        dayNames.forEach(function(d) { html += '<div class="cal-day-name">' + d + '</div>'; });
+        for (var i = 0; i < firstDay; i++) html += '<div class="cal-day empty"></div>';
+        for (var d = 1; d <= daysInMonth; d++) {
+            var dt = new Date(year, month, d); dt.setHours(0,0,0,0);
+            var isPast = dt < today;
+            var isToday = dt.getTime() === today.getTime();
+            var isSelected = selected.date === formatDate(dt);
+            var cls = 'cal-day';
+            if (isPast) cls += ' disabled';
+            if (isToday) cls += ' today';
+            if (isSelected) cls += ' selected';
+            html += '<div class="' + cls + '"' + (isPast ? '' : ' onclick="selectDate(' + year + ',' + month + ',' + d + ')"') + '>' + d + '</div>';
+        }
+        document.getElementById('calGrid').innerHTML = html;
+    }
+
+    function formatDate(dt) {
+        return dt.getFullYear() + '-' + String(dt.getMonth()+1).padStart(2,'0') + '-' + String(dt.getDate()).padStart(2,'0');
+    }
+
+    function formatDisplayDate(str) {
+        var parts = str.split('-');
+        return parseInt(parts[2]) + ' ' + monthNames[parseInt(parts[1])-1] + ' ' + parts[0];
+    }
+
+    function selectDate(y, m, d) {
+        selected.date = formatDate(new Date(y, m, d));
+        selected.time = null;
+        renderCalendar();
+        loadSlots(selected.date);
+        document.getElementById('step2Next').disabled = true;
+    }
+
+    document.getElementById('prevMonth').addEventListener('click', function() { calDate.setMonth(calDate.getMonth()-1); renderCalendar(); });
+    document.getElementById('nextMonth').addEventListener('click', function() { calDate.setMonth(calDate.getMonth()+1); renderCalendar(); });
+
+    // ── Time slots ──
+    function loadSlots(date) {
+        document.getElementById('selectedDateText').textContent = formatDisplayDate(date);
+        document.getElementById('slotsSection').style.display = 'block';
+        fetch(API + '/api/reservations/slots?date=' + date)
+            .then(function(r){ return r.json(); })
+            .then(function(data) {
+                var html = '';
+                data.slots.forEach(function(s) {
+                    var cls = s.available ? 'slot' : 'slot disabled';
+                    if (selected.time === s.time) cls += ' selected';
+                    html += '<div class="' + cls + '"' + (s.available ? ' onclick="selectTime(\'' + s.time + '\')"' : '') + '>' + s.time + '</div>';
+                });
+                document.getElementById('slotsGrid').innerHTML = html;
+            })
+            .catch(function() {
+                document.getElementById('slotsGrid').innerHTML = '<p style="color:var(--gray-400);grid-column:1/-1;text-align:center;padding:20px"><i class="fas fa-exclamation-triangle" style="margin-right:6px"></i>Erreur de chargement des créneaux.</p>';
+            });
+    }
+
+    function selectTime(time) {
+        selected.time = time;
+        loadSlots(selected.date);
+        document.getElementById('step2Next').disabled = false;
+        updateSummary();
+    }
+
+    function updateSummary() {
+        document.getElementById('sumService').textContent = selected.service || '—';
+        document.getElementById('sumPrice').textContent = selected.price ? selected.price + '$' : '—';
+        document.getElementById('sumDate').textContent = selected.date ? formatDisplayDate(selected.date) : '—';
+        document.getElementById('sumTime').textContent = selected.time || '—';
+    }
+
+    // ── Step navigation ──
+    function goToStep(n) {
+        [1,2,3,4].forEach(function(s) { document.getElementById('step'+s).style.display = 'none'; });
+        var stepEl = document.getElementById('step'+n);
+        stepEl.style.display = 'block';
+        stepEl.style.animation = 'none';
+        stepEl.offsetHeight;
+        stepEl.style.animation = 'fadeScale .4s ease';
+        document.querySelectorAll('.step-item').forEach(function(el,i) {
+            el.className = 'step-item';
+            if (i+1 < n) el.classList.add('done');
+            if (i+1 === n) el.classList.add('active');
+        });
+        if (n === 3) updateSummary();
+        window.scrollTo({top: 0, behavior: 'smooth'});
+    }
+
+    // ── Submit reservation ──
+    document.getElementById('reservationForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        var errEl = document.getElementById('resError');
+        var btn = document.getElementById('resSubmit');
+        var name = document.getElementById('r_name').value.trim();
+        var email = document.getElementById('r_email').value.trim();
+        var phone = document.getElementById('r_phone').value.trim();
+        var vehicle = document.getElementById('r_vehicle').value;
+        var address = document.getElementById('r_address').value.trim();
+        var city = document.getElementById('r_city').value.trim();
+
+        if (!name || !email || !phone || !vehicle || !address || !city) {
+            errEl.innerHTML = '<i class="fas fa-exclamation-circle"></i> Veuillez remplir tous les champs obligatoires.';
+            errEl.classList.add('show');
+            return;
+        }
+
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Réservation en cours...';
+        errEl.classList.remove('show');
+
+        fetch(API + '/api/reservations', {
+            method: 'POST',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({
+                name: name, email: email, phone: phone,
+                vehicle_type: vehicle,
+                vehicle_plate: document.getElementById('r_plate').value.trim() || null,
+                service: selected.service,
+                address: address, city: city,
+                postal_code: document.getElementById('r_postal').value.trim() || null,
+                date: selected.date, time: selected.time,
+                notes: document.getElementById('r_notes').value.trim() || null
+            })
+        }).then(function(r){ return r.json(); })
+        .then(function(data) {
+            if (data.success) {
+                document.getElementById('sumId').textContent = '#' + data.id;
+                document.getElementById('sumService2').textContent = selected.service;
+                document.getElementById('sumDate2').textContent = formatDisplayDate(selected.date);
+                document.getElementById('sumTime2').textContent = selected.time;
+                goToStep(4);
+            } else {
+                errEl.innerHTML = '<i class="fas fa-exclamation-circle"></i> ' + (data.error || 'Erreur lors de la réservation.');
+                errEl.classList.add('show');
+            }
+        }).catch(function() {
+            errEl.innerHTML = '<i class="fas fa-exclamation-circle"></i> Erreur réseau. Veuillez réessayer.';
+            errEl.classList.add('show');
+        }).finally(function() {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-check-circle"></i> Confirmer la réservation';
+        });
+    });
+
+    function resetReservation() {
+        selected = { service: null, price: null, date: null, time: null };
+        document.getElementById('reservationForm').reset();
+        goToStep(1);
+        renderServices();
+    }
+
+    // ── Init ──
+    renderServices();
+    renderCalendar();
+    </script>
+</body>
+</html>

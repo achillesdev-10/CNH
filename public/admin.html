@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin | CNH Service</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='15' fill='%230ea5e9'/><text x='16' y='22' text-anchor='middle' fill='white' font-size='16' font-weight='bold' font-family='Arial'>C</text></svg>">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:'Inter',sans-serif;font-size:16px;line-height:1.6;color:#1e293b;background:#f0f4f8;min-height:100vh}
+        :root{--blue:#0ea5e9;--blue-dark:#0284c7;--blue-deeper:#0369a1;--blue-light:#e0f2fe;--navy:#0f172a;--slate:#1e293b;--gray-100:#f1f5f9;--gray-200:#e2e8f0;--gray-300:#cbd5e1;--gray-400:#94a3b8;--gray-500:#64748b;--white:#fff;--green:#10b981;--green-dark:#059669;--red:#ef4444;--amber:#f59e0b;--shadow-sm:0 1px 4px rgba(0,0,0,.05);--shadow-md:0 4px 16px rgba(0,0,0,.08);--shadow-lg:0 10px 30px rgba(0,0,0,.1);--radius:12px;--radius-lg:16px;--transition:.3s cubic-bezier(.4,0,.2,1)}
+
+        /* ── Logo ── */
+        .logo-svg{display:flex;align-items:center;gap:10px;text-decoration:none}
+        .logo-svg .logo-icon{width:36px;height:36px;flex-shrink:0}
+        .logo-svg .logo-text{font-size:1rem;font-weight:800;color:var(--slate);line-height:1.1;letter-spacing:-.5px}
+        .logo-svg .logo-text span{display:block;font-size:.55rem;font-weight:500;color:var(--gray-400);letter-spacing:.5px;text-transform:uppercase}
+
+        .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:10px 20px;border-radius:10px;text-decoration:none;font-weight:600;font-size:.85rem;transition:all .3s cubic-bezier(.4,0,.2,1);border:none;cursor:pointer;font-family:'Inter',sans-serif}
+        .btn-primary{background:linear-gradient(135deg,var(--blue),var(--blue-dark));color:var(--white);box-shadow:0 3px 10px rgba(14,165,233,.25)}
+        .btn-primary:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(14,165,233,.35)}
+        .btn-sm{padding:7px 14px;font-size:.8rem;border-radius:8px}
+        .btn-danger{background:linear-gradient(135deg,var(--red),#dc2626);color:var(--white)}.btn-danger:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(239,68,68,.3)}
+        .btn-success{background:linear-gradient(135deg,var(--green),var(--green-dark));color:var(--white)}.btn-success:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(16,185,129,.3)}
+
+        /* ── Login ── */
+        .login-overlay{position:fixed;inset:0;background:linear-gradient(135deg,#f0f9ff 0%,#e0f2fe 50%,#f0f4f8 100%);display:flex;align-items:center;justify-content:center;z-index:2000}
+        .login-overlay.hidden{display:none}
+        .login-card{background:var(--white);border-radius:20px;padding:44px;width:92%;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,.08);text-align:center;animation:fadeScale .5s ease}
+        @keyframes fadeScale{from{opacity:0;transform:scale(.95)}to{opacity:1;transform:scale(1)}}
+        @keyframes fadeSlideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+        .login-card h1{font-size:1.5rem;color:var(--slate);margin-bottom:4px;font-weight:800}
+        .login-card p{color:var(--gray-500);font-size:.9rem;margin-bottom:28px}
+        .login-card .form-group{text-align:left;margin-bottom:16px}
+        .login-card .form-group label{display:block;font-size:.8rem;font-weight:600;color:var(--slate);margin-bottom:6px}
+        .login-card input{width:100%;padding:13px 16px;border:2px solid var(--gray-200);border-radius:12px;font-family:'Inter',sans-serif;font-size:.9rem;background:var(--gray-100);transition:all .3s ease}
+        .login-card input:focus{border-color:var(--blue);outline:none;background:var(--white);box-shadow:0 0 0 4px rgba(14,165,233,.1)}
+        .login-error{color:var(--red);font-size:.85rem;margin-top:10px;display:none;font-weight:500}
+        .login-card .btn-primary{padding:14px;font-size:1rem;border-radius:12px;margin-top:8px}
+
+        /* ── Layout ── */
+        .admin-layout{display:none;min-height:100vh;animation:fadeSlideUp .5s ease}
+        .admin-layout.active{display:block}
+        .topbar{background:rgba(255,255,255,.97);backdrop-filter:blur(20px) saturate(180%);border-bottom:1px solid var(--gray-200);padding:14px 28px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:100;transition:box-shadow .3s ease}
+        .topbar.scrolled{box-shadow:0 1px 16px rgba(0,0,0,.06)}
+        .topbar-left{display:flex;align-items:center;gap:14px}
+        .topbar-left h2{font-size:1rem;color:var(--slate);font-weight:700}
+        .topbar-right{display:flex;align-items:center;gap:10px}
+        .topbar-right span{font-size:.85rem;color:var(--gray-500);font-weight:500}
+        .topbar-right .btn{border-radius:10px}
+        .main-content{max-width:1200px;margin:0 auto;padding:28px}
+
+        /* ── Tabs ── */
+        .tabs{display:flex;gap:4px;margin-bottom:28px;background:var(--white);border-radius:var(--radius);padding:5px;box-shadow:var(--shadow-sm);overflow-x:auto;border:1px solid var(--gray-200)}
+        .tab{padding:11px 22px;border-radius:8px;font-size:.85rem;font-weight:600;color:var(--gray-500);cursor:pointer;transition:all .3s ease;white-space:nowrap;border:none;background:none;font-family:'Inter',sans-serif;display:flex;align-items:center;gap:7px}
+        .tab.active{background:linear-gradient(135deg,var(--blue),var(--blue-dark));color:var(--white);box-shadow:0 3px 10px rgba(14,165,233,.25)}
+        .tab:hover:not(.active){background:var(--blue-light);color:var(--blue)}
+
+        /* ── Stats ── */
+        .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:18px;margin-bottom:28px}
+        .stat-card{background:var(--white);border-radius:var(--radius-lg);padding:22px;box-shadow:var(--shadow-sm);transition:all .3s ease;border:1px solid transparent;animation:fadeSlideUp .5s ease}
+        .stat-card:hover{transform:translateY(-4px);box-shadow:var(--shadow-md);border-color:var(--blue-light)}
+        .stat-card .icon{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;margin-bottom:14px;transition:transform .3s ease}
+        .stat-card:hover .icon{transform:scale(1.1) rotate(-5deg)}
+        .stat-card .icon.blue{background:rgba(14,165,233,.1);color:var(--blue)}
+        .stat-card .icon.green{background:rgba(16,185,129,.1);color:var(--green)}
+        .stat-card .icon.navy{background:rgba(15,23,42,.08);color:var(--navy)}
+        .stat-card .icon.amber{background:rgba(245,158,11,.1);color:var(--amber)}
+        .stat-card strong{display:block;font-size:1.7rem;font-weight:800;color:var(--slate)}
+        .stat-card span{font-size:.8rem;color:var(--gray-400);font-weight:500}
+
+        /* ── Cards ── */
+        .card{background:var(--white);border-radius:var(--radius-lg);box-shadow:var(--shadow-sm);margin-bottom:22px;overflow:hidden;border:1px solid var(--gray-200);transition:box-shadow .3s ease}
+        .card:hover{box-shadow:var(--shadow-md)}
+        .card-header{padding:18px 22px;border-bottom:1px solid var(--gray-200);display:flex;justify-content:space-between;align-items:center}
+        .card-header h3{font-size:.95rem;color:var(--slate);display:flex;align-items:center;gap:8px;font-weight:700}
+        .card-body{padding:22px}
+
+        /* ── Table ── */
+        .table-wrap{overflow-x:auto}
+        table{width:100%;border-collapse:collapse;font-size:.85rem}
+        th{text-align:left;padding:12px 14px;background:var(--gray-100);color:var(--gray-500);font-weight:600;font-size:.78rem;text-transform:uppercase;letter-spacing:.5px;border-bottom:2px solid var(--gray-200)}
+        td{padding:12px 14px;border-bottom:1px solid var(--gray-100);color:var(--slate);transition:background .2s ease}
+        tr:hover td{background:rgba(14,165,233,.03)}
+
+        .badge{padding:4px 12px;border-radius:20px;font-size:.75rem;font-weight:600;display:inline-block;letter-spacing:.3px}
+        .badge.new{background:rgba(14,165,233,.1);color:var(--blue)}
+        .badge.pending{background:rgba(245,158,11,.1);color:var(--amber)}
+        .badge.confirmed{background:rgba(16,185,129,.1);color:var(--green)}
+        .badge.completed{background:rgba(16,185,129,.15);color:#059669}
+        .badge.cancelled{background:rgba(239,68,68,.1);color:var(--red)}
+        .badge.in_progress{background:rgba(245,158,11,.1);color:var(--amber)}
+        .badge.archived{background:var(--gray-200);color:var(--gray-500)}
+
+        /* ── Chart ── */
+        .chart{display:flex;align-items:flex-end;gap:8px;height:160px;padding:0 4px}
+        .chart-bar{flex:1;border-radius:8px 8px 0 0;transition:all .4s ease;min-height:4px;position:relative}
+        .chart-bar:hover{filter:brightness(1.1);transform:scaleY(1.02);transform-origin:bottom}
+        .chart-bar.blue{background:linear-gradient(180deg,var(--blue),var(--blue-dark))}
+        .chart-bar.green{background:linear-gradient(180deg,var(--green),var(--green-dark))}
+        .chart-label{text-align:center;font-size:.72rem;color:var(--gray-400);margin-top:8px;font-weight:600}
+
+        /* ── Settings ── */
+        .settings-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+        .settings-grid .form-group{margin-bottom:16px}
+        .settings-grid label{display:block;font-size:.8rem;font-weight:600;color:var(--slate);margin-bottom:6px}
+        .settings-grid input,.settings-grid textarea{width:100%;padding:12px 16px;border:2px solid var(--gray-200);border-radius:12px;font-family:'Inter',sans-serif;font-size:.9rem;background:var(--gray-100);transition:all .3s ease}
+        .settings-grid input:focus,.settings-grid textarea:focus{border-color:var(--blue);outline:none;background:var(--white);box-shadow:0 0 0 4px rgba(14,165,233,.1)}
+
+        /* ── Toast ── */
+        .toast{position:fixed;bottom:28px;right:28px;background:linear-gradient(135deg,var(--green),var(--green-dark));color:var(--white);padding:14px 24px;border-radius:14px;font-size:.88rem;font-weight:600;box-shadow:0 6px 24px rgba(16,185,129,.3);transform:translateY(120px);opacity:0;transition:all .4s cubic-bezier(.4,0,.2,1);z-index:9999;display:flex;align-items:center;gap:8px}
+        .toast.show{transform:translateY(0);opacity:1}
+
+        .empty-state{text-align:center;padding:48px 24px;color:var(--gray-400)}
+        .empty-state i{font-size:2.5rem;margin-bottom:12px;display:block;opacity:.5}
+        .empty-state p{font-size:.9rem}
+
+        @media(max-width:768px){.settings-grid{grid-template-columns:1fr}.stats-grid{grid-template-columns:repeat(2,1fr)}.tabs{gap:2px}.tab{padding:9px 14px;font-size:.8rem}.main-content{padding:18px}.topbar{padding:12px 16px}}
+        @media(max-width:480px){.stats-grid{grid-template-columns:1fr}.card-body{padding:16px}}
+    </style>
+</head>
+<body>
+    <!-- Login -->
+    <div class="login-overlay" id="loginOverlay">
+        <div class="login-card">
+            <a href="/" class="logo-svg" style="justify-content:center;margin-bottom:20px">
+                <svg class="logo-icon" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:48px;height:48px">
+                    <rect width="48" height="48" rx="14" fill="url(#logoGrad)"/>
+                    <path d="M12 32V16h4v12h8v4H12z" fill="white"/>
+                    <path d="M26 32V16l10 8-10 8z" fill="white" opacity=".85"/>
+                    <circle cx="36" cy="14" r="3" fill="#38bdf8"/>
+                    <defs><linearGradient id="logoGrad" x1="0" y1="0" x2="48" y2="48"><stop stop-color="#0ea5e9"/><stop offset="1" stop-color="#0369a1"/></linearGradient></defs>
+                </svg>
+            </a>
+            <h1>Administration</h1>
+            <p>Connectez-vous pour gérer votre site.</p>
+            <div class="form-group"><label>Nom d'utilisateur</label><input type="text" id="loginUser" placeholder="admin" autocomplete="username"></div>
+            <div class="form-group"><label>Mot de passe</label><input type="password" id="loginPass" placeholder="••••••••" autocomplete="current-password"></div>
+            <div class="login-error" id="loginError">Identifiants incorrects.</div>
+            <button class="btn btn-primary" style="width:100%" id="loginBtn"><i class="fas fa-right-to-bracket"></i> Se connecter</button>
+        </div>
+    </div>
+
+    <!-- Dashboard -->
+    <div class="admin-layout" id="adminLayout">
+        <div class="topbar" id="topbar">
+            <div class="topbar-left">
+                <a href="/" class="logo-svg">
+                    <svg class="logo-icon" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect width="48" height="48" rx="14" fill="url(#logoGrad2)"/>
+                        <path d="M12 32V16h4v12h8v4H12z" fill="white"/>
+                        <path d="M26 32V16l10 8-10 8z" fill="white" opacity=".85"/>
+                        <circle cx="36" cy="14" r="3" fill="#38bdf8"/>
+                        <defs><linearGradient id="logoGrad2" x1="0" y1="0" x2="48" y2="48"><stop stop-color="#0ea5e9"/><stop offset="1" stop-color="#0369a1"/></linearGradient></defs>
+                    </svg>
+                    <div class="logo-text">CNH Admin<span>Tableau de bord</span></div>
+                </a>
+            </div>
+            <div class="topbar-right">
+                <span id="adminName">admin</span>
+                <a href="/" class="btn btn-sm" style="background:var(--gray-100);color:var(--slate)"><i class="fas fa-globe"></i> Site</a>
+                <button class="btn btn-sm" style="background:var(--gray-100);color:var(--slate)" id="logoutBtn"><i class="fas fa-right-from-bracket"></i></button>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="tabs">
+                <button class="tab active" data-tab="overview"><i class="fas fa-chart-line"></i> Vue d'ensemble</button>
+                <button class="tab" data-tab="reservations"><i class="fas fa-calendar-check"></i> Réservations</button>
+                <button class="tab" data-tab="contacts"><i class="fas fa-envelope"></i> Contacts</button>
+                <button class="tab" data-tab="reviews"><i class="fas fa-star"></i> Avis</button>
+                <button class="tab" data-tab="settings"><i class="fas fa-gear"></i> Paramètres</button>
+            </div>
+
+            <!-- Overview -->
+            <div id="tab-overview">
+                <div class="stats-grid" id="statsGrid"></div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:22px">
+                    <div class="card">
+                        <div class="card-header"><h3><i class="fas fa-chart-bar" style="color:var(--blue)"></i> Activité hebdomadaire</h3></div>
+                        <div class="card-body"><div class="chart" id="weeklyChart"></div></div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header"><h3><i class="fas fa-fire" style="color:var(--amber)"></i> Services populaires</h3></div>
+                        <div class="card-body" id="topServices"></div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header"><h3><i class="fas fa-clock-rotate-left" style="color:var(--green)"></i> Dernières réservations</h3></div>
+                    <div class="card-body table-wrap" id="recentReservations"></div>
+                </div>
+            </div>
+
+            <!-- Reservations -->
+            <div id="tab-reservations" style="display:none">
+                <div class="card">
+                    <div class="card-header"><h3><i class="fas fa-calendar-check" style="color:var(--blue)"></i> Toutes les réservations</h3>
+                        <select id="resFilter" style="padding:8px 14px;border:2px solid var(--gray-200);border-radius:10px;font-size:.82rem;font-family:'Inter',sans-serif;font-weight:500;transition:all .3s ease;background:var(--white)">
+                            <option value="">Tous</option>
+                            <option value="pending">En attente</option>
+                            <option value="confirmed">Confirmées</option>
+                            <option value="completed">Terminées</option>
+                            <option value="cancelled">Annulées</option>
+                        </select>
+                    </div>
+                    <div class="card-body table-wrap" id="allReservations"></div>
+                </div>
+            </div>
+
+            <!-- Contacts -->
+            <div id="tab-contacts" style="display:none">
+                <div class="card">
+                    <div class="card-header"><h3><i class="fas fa-envelope" style="color:var(--blue)"></i> Messages de contact</h3>
+                        <select id="contactFilter" style="padding:8px 14px;border:2px solid var(--gray-200);border-radius:10px;font-size:.82rem;font-family:'Inter',sans-serif;font-weight:500;transition:all .3s ease;background:var(--white)">
+                            <option value="">Tous</option>
+                            <option value="new">Nouveaux</option>
+                            <option value="in_progress">En cours</option>
+                            <option value="completed">Terminés</option>
+                        </select>
+                    </div>
+                    <div class="card-body table-wrap" id="allContacts"></div>
+                </div>
+            </div>
+
+            <!-- Reviews -->
+            <div id="tab-reviews" style="display:none">
+                <div class="card">
+                    <div class="card-header"><h3><i class="fas fa-star" style="color:var(--amber)"></i> Avis clients</h3>
+                        <select id="reviewFilter" style="padding:8px 14px;border:2px solid var(--gray-200);border-radius:10px;font-size:.82rem;font-family:'Inter',sans-serif;font-weight:500;transition:all .3s ease;background:var(--white)">
+                            <option value="">Tous</option>
+                            <option value="pending">En attente</option>
+                            <option value="approved">Publiés</option>
+                        </select>
+                    </div>
+                    <div class="card-body table-wrap" id="allReviews"></div>
+                </div>
+            </div>
+
+            <!-- Settings -->
+            <div id="tab-settings" style="display:none">
+                <div class="card">
+                    <div class="card-header"><h3><i class="fas fa-gear" style="color:var(--gray-400)"></i> Paramètres du site</h3></div>
+                    <div class="card-body">
+                        <div class="settings-grid">
+                            <div class="form-group"><label>Email de contact</label><input type="email" id="setEmail"></div>
+                            <div class="form-group"><label>Téléphone</label><input type="tel" id="setPhone"></div>
+                            <div class="form-group"><label>Numéro WhatsApp</label><input type="text" id="setWhatsapp"></div>
+                            <div class="form-group"><label>Heures d'ouverture</label><input type="text" id="setHours"></div>
+                            <div class="form-group"><label>Zone de service</label><input type="text" id="setAddress"></div>
+                            <div class="form-group"><label>Message d'accueil WhatsApp</label><input type="text" id="setMsg"></div>
+                        </div>
+                        <div style="margin-top:24px;display:flex;gap:12px">
+                            <button class="btn btn-primary" id="saveSettings"><i class="fas fa-check"></i> Sauvegarder</button>
+                            <button class="btn" style="background:var(--gray-100);color:var(--slate)" id="resetSettings"><i class="fas fa-rotate-left"></i> Réinitialiser</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"><i class="fas fa-check-circle"></i> <span id="toastMsg"></span></div>
+
+    <script>
+    var API = '';
+    var token = localStorage.getItem('cnh_token');
+    var labels = { pending:'En attente', confirmed:'Confirmé', completed:'Terminé', cancelled:'Annulé', new:'Nouveau', in_progress:'En cours', archived:'Archivé' };
+
+    // ── Toast ──
+    function toast(msg) {
+        var t = document.getElementById('toast');
+        document.getElementById('toastMsg').textContent = msg;
+        t.classList.add('show');
+        setTimeout(function(){ t.classList.remove('show'); }, 3000);
+    }
+
+    // ── API helper ──
+    function api(method, path, body) {
+        var opts = { method: method, headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token } };
+        if (body) opts.body = JSON.stringify(body);
+        return fetch(API + path, opts).then(function(r) {
+            if (r.status === 401) { logout(); throw new Error('Unauthorized'); }
+            return r.json();
+        });
+    }
+
+    // ── Scroll shadow on topbar ──
+    window.addEventListener('scroll', function(){
+        var tb = document.getElementById('topbar');
+        if(tb) tb.classList.toggle('scrolled', window.scrollY > 10);
+    });
+
+    // ── Auth ──
+    document.getElementById('loginBtn').addEventListener('click', login);
+    document.getElementById('loginPass').addEventListener('keydown', function(e) { if (e.key === 'Enter') login(); });
+
+    function login() {
+        var u = document.getElementById('loginUser').value.trim();
+        var p = document.getElementById('loginPass').value.trim();
+        if (!u || !p) return;
+        document.getElementById('loginError').style.display = 'none';
+        fetch(API + '/api/auth/login', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({username:u,password:p}) })
+        .then(function(r){ return r.json(); })
+        .then(function(data) {
+            if (data.token) {
+                token = data.token;
+                localStorage.setItem('cnh_token', token);
+                document.getElementById('loginOverlay').classList.add('hidden');
+                document.getElementById('adminLayout').classList.add('active');
+                loadDashboard();
+            } else {
+                document.getElementById('loginError').textContent = 'Identifiants incorrects.';
+                document.getElementById('loginError').style.display = 'block';
+            }
+        }).catch(function() {
+            document.getElementById('loginError').textContent = 'Erreur réseau.';
+            document.getElementById('loginError').style.display = 'block';
+        });
+    }
+
+    function logout() {
+        token = null;
+        localStorage.removeItem('cnh_token');
+        document.getElementById('loginOverlay').classList.remove('hidden');
+        document.getElementById('adminLayout').classList.remove('active');
+    }
+    document.getElementById('logoutBtn').addEventListener('click', function() { api('POST','/api/auth/logout').then(logout).catch(logout); });
+
+    // ── Tabs ──
+    document.querySelectorAll('.tab').forEach(function(tab) {
+        tab.addEventListener('click', function() {
+            document.querySelectorAll('.tab').forEach(function(t){ t.classList.remove('active'); });
+            tab.classList.add('active');
+            var name = tab.dataset.tab;
+            ['overview','reservations','contacts','reviews','settings'].forEach(function(n) {
+                var el = document.getElementById('tab-'+n);
+                if(n === name){el.style.display='block';el.style.animation='fadeSlideUp .4s ease'}
+                else{el.style.display='none'}
+            });
+            if (name === 'reservations') loadReservations();
+            if (name === 'contacts') loadContacts();
+            if (name === 'reviews') loadReviews();
+            if (name === 'settings') loadSettings();
+        });
+    });
+
+    // ── Dashboard ──
+    function loadDashboard() {
+        api('GET', '/api/stats/dashboard').then(function(data) {
+            var o = data.overview;
+            var ratingVal = (o.avgRating != null ? o.avgRating : '—') + (o.avgRating != null ? ' ★' : '');
+            var ratingLabel = (o.ratingsCount > 0 ? 'Note moyenne (' + o.ratingsCount + ' avis)' : 'Note moyenne — aucun avis');
+            document.getElementById('statsGrid').innerHTML =
+                statCard('blue','fa-eye', o.monthVisits, 'Visites ce mois') +
+                statCard('green','fa-file-lines', o.newContacts + ' / ' + o.totalContacts, 'Demandes (nouvelles / total)') +
+                statCard('navy','fa-calendar', o.pendingReservations + ' / ' + o.totalReservations, 'Réservations (en attente / total)') +
+                statCard('amber','fa-star', ratingVal, ratingLabel);
+
+            // Weekly chart
+            var days = ['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];
+            var chartHtml = '';
+            var chartTotal = 0;
+            var today = new Date();
+            for (var i = 6; i >= 0; i--) {
+                var d = new Date(today); d.setDate(d.getDate() - i);
+                var dateStr = d.toISOString().split('T')[0];
+                var dayData = data.weeklyActivity.filter(function(w){ return w.date === dateStr; });
+                var total = dayData.reduce(function(s,w){ return s + w.total; }, 0);
+                chartTotal += total;
+                var h = Math.min(100, (total / 80) * 100);
+                chartHtml += '<div style="flex:1;text-align:center"><div class="chart-bar ' + (i%2===0?'blue':'green') + '" style="height:'+h+'%" title="'+total+' activités"></div><div class="chart-label">'+days[d.getDay()]+'</div></div>';
+            }
+            document.getElementById('weeklyChart').innerHTML = chartTotal > 0
+                ? chartHtml
+                : '<div class="empty-state" style="padding:24px"><i class="fas fa-chart-simple"></i><p>Aucune activité cette semaine — les données réelles apparaîtront ici.</p></div>';
+
+            // Top services
+            var svcHtml = '';
+            data.topServices.forEach(function(s) {
+                svcHtml += '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--gray-100);transition:background .2s"><span style="font-size:.88rem;color:var(--slate);font-weight:500">'+s.service+'</span><span class="badge confirmed">'+s.count+' réservations</span></div>';
+            });
+            document.getElementById('topServices').innerHTML = svcHtml || '<div class="empty-state"><i class="fas fa-inbox"></i><p>Aucune donnée</p></div>';
+
+            // Recent reservations
+            document.getElementById('recentReservations').innerHTML = reservationsTable(data.recentReservations);
+        }).catch(function(){});
+    }
+
+    function statCard(color, icon, value, label) {
+        return '<div class="stat-card"><div class="icon '+color+'"><i class="fas '+icon+'"></i></div><strong>'+value+'</strong><span>'+label+'</span></div>';
+    }
+
+    // ── Reservations ──
+    function loadReservations(status) {
+        var q = status ? '?status='+status : '';
+        api('GET', '/api/reservations'+q).then(function(data) {
+            document.getElementById('allReservations').innerHTML = reservationsTable(data.reservations, true);
+        });
+    }
+
+    function reservationsTable(list, full) {
+        if (!list || !list.length) return '<div class="empty-state"><i class="fas fa-calendar-xmark"></i><p>Aucune réservation</p></div>';
+        var html = '<table><thead><tr><th>#</th><th>Nom</th><th>Service</th>'+(full?'<th>Véhicule</th>':'')+'<th>Date</th><th>Heure</th><th>Statut</th><th>Actions</th></tr></thead><tbody>';
+        list.forEach(function(r) {
+            html += '<tr><td>#'+r.id+'</td><td>'+esc(r.name)+'</td><td>'+esc(r.service)+'</td>';
+            if (full) html += '<td>'+esc(r.vehicle_type)+'</td>';
+            html += '<td>'+r.reservation_date+'</td><td>'+r.reservation_time+'</td>';
+            html += '<td><span class="badge '+r.status+'">'+(labels[r.status]||r.status)+'</span></td>';
+            html += '<td style="white-space:nowrap">';
+            if (r.status === 'pending') {
+                html += '<button class="btn btn-sm btn-success" onclick="updateRes('+r.id+',\'confirmed\')"><i class="fas fa-check"></i></button> ';
+                html += '<button class="btn btn-sm btn-danger" onclick="updateRes('+r.id+',\'cancelled\')"><i class="fas fa-times"></i></button>';
+            } else if (r.status === 'confirmed') {
+                html += '<button class="btn btn-sm btn-success" onclick="updateRes('+r.id+',\'completed\')"><i class="fas fa-flag-checkered"></i></button>';
+            }
+            html += '</td></tr>';
+        });
+        html += '</tbody></table>';
+        return html;
+    }
+
+    function updateRes(id, status) {
+        api('PATCH', '/api/reservations/'+id, {status:status}).then(function() {
+            toast('Réservation mise à jour !');
+            loadReservations(document.getElementById('resFilter').value);
+            loadDashboard();
+        });
+    }
+
+    document.getElementById('resFilter').addEventListener('change', function() { loadReservations(this.value); });
+
+    // ── Contacts ──
+    function loadContacts(status) {
+        var q = status ? '?status='+status : '';
+        api('GET', '/api/contacts'+q).then(function(data) {
+            var list = data.contacts;
+            if (!list || !list.length) { document.getElementById('allContacts').innerHTML = '<div class="empty-state"><i class="fas fa-inbox"></i><p>Aucun message</p></div>'; return; }
+            var html = '<table><thead><tr><th>Nom</th><th>Email</th><th>Téléphone</th><th>Service</th><th>Message</th><th>Statut</th><th>Actions</th></tr></thead><tbody>';
+            list.forEach(function(c) {
+                html += '<tr><td>'+esc(c.name)+'</td><td>'+esc(c.email)+'</td><td>'+esc(c.phone)+'</td><td>'+esc(c.service)+'</td>';
+                html += '<td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+esc(c.message)+'">'+esc(c.message)+'</td>';
+                html += '<td><span class="badge '+c.status+'">'+(labels[c.status]||c.status)+'</span></td>';
+                html += '<td style="white-space:nowrap">';
+                if (c.status === 'new') html += '<button class="btn btn-sm" style="background:var(--amber);color:var(--white)" onclick="updateContact('+c.id+',\'in_progress\')"><i class="fas fa-spinner"></i></button> ';
+                if (c.status !== 'completed') html += '<button class="btn btn-sm btn-success" onclick="updateContact('+c.id+',\'completed\')"><i class="fas fa-check"></i></button>';
+                html += '</td></tr>';
+            });
+            html += '</tbody></table>';
+            document.getElementById('allContacts').innerHTML = html;
+        });
+    }
+
+    function updateContact(id, status) {
+        api('PATCH', '/api/contacts/'+id, {status:status}).then(function() {
+            toast('Message mis à jour !');
+            loadContacts(document.getElementById('contactFilter').value);
+        });
+    }
+
+    document.getElementById('contactFilter').addEventListener('change', function() { loadContacts(this.value); });
+
+    // ── Reviews ──
+    function loadReviews(status) {
+        var q = status ? '?status=' + status : '';
+        api('GET', '/api/testimonials/admin' + q).then(function(list) {
+            var box = document.getElementById('allReviews');
+            if (!list || !list.length) {
+                box.innerHTML = '<div class="empty-state"><i class="fas fa-star"></i><p>Aucun avis pour le moment — les avis envoyés par vos clients apparaîtront ici.</p></div>';
+                return;
+            }
+            var html = '<table><thead><tr><th>Nom</th><th>Ville</th><th>Note</th><th>Message</th><th>Statut</th><th>Date</th><th>Actions</th></tr></thead><tbody>';
+            list.forEach(function(t) {
+                var stars = '';
+                for (var i = 1; i <= 5; i++) stars += i <= (t.rating || 5) ? '<i class="fas fa-star"></i>' : '<i class="far fa-star"></i>';
+                html += '<tr><td>'+esc(t.name)+'</td><td>'+esc(t.location || '—')+'</td><td style="color:var(--amber);white-space:nowrap">'+stars+'</td>';
+                html += '<td style="max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+esc(t.message)+'">'+esc(t.message)+'</td>';
+                html += '<td><span class="badge ' + (t.approved ? 'confirmed' : 'pending') + '">' + (t.approved ? 'Publié' : 'En attente') + '</span></td>';
+                html += '<td>' + (t.created_at || '').slice(0, 10) + '</td>';
+                html += '<td style="white-space:nowrap">';
+                if (!t.approved) html += '<button class="btn btn-sm btn-success" onclick="setReview('+t.id+',1)"><i class="fas fa-check"></i> Publier</button> ';
+                else html += '<button class="btn btn-sm" style="background:var(--gray-100);color:var(--slate)" onclick="setReview('+t.id+',0)"><i class="fas fa-eye-slash"></i> Masquer</button> ';
+                html += '<button class="btn btn-sm btn-danger" onclick="delReview('+t.id+')"><i class="fas fa-trash"></i></button>';
+                html += '</td></tr>';
+            });
+            html += '</tbody></table>';
+            box.innerHTML = html;
+        });
+    }
+
+    function setReview(id, approved) {
+        api('PATCH', '/api/testimonials/'+id, { approved: !!approved }).then(function() {
+            toast(approved ? 'Avis publié sur le site !' : 'Avis masqué du site.');
+            loadReviews(document.getElementById('reviewFilter').value);
+            loadDashboard();
+        });
+    }
+
+    function delReview(id) {
+        if (!confirm('Supprimer définitivement cet avis ?')) return;
+        api('DELETE', '/api/testimonials/'+id).then(function() {
+            toast('Avis supprimé.');
+            loadReviews(document.getElementById('reviewFilter').value);
+            loadDashboard();
+        });
+    }
+
+    document.getElementById('reviewFilter').addEventListener('change', function() { loadReviews(this.value); });
+
+    // ── Settings ──
+    function loadSettings() {
+        api('GET', '/api/settings').then(function(s) {
+            document.getElementById('setEmail').value = s.email || '';
+            document.getElementById('setPhone').value = s.phone || '';
+            document.getElementById('setWhatsapp').value = s.whatsapp || '';
+            document.getElementById('setHours').value = s.hours || '';
+            document.getElementById('setAddress').value = s.address || '';
+            document.getElementById('setMsg').value = s.welcome_msg || '';
+        });
+    }
+
+    document.getElementById('saveSettings').addEventListener('click', function() {
+        api('PUT', '/api/settings', {
+            email: document.getElementById('setEmail').value,
+            phone: document.getElementById('setPhone').value,
+            whatsapp: document.getElementById('setWhatsapp').value,
+            hours: document.getElementById('setHours').value,
+            address: document.getElementById('setAddress').value,
+            welcome_msg: document.getElementById('setMsg').value
+        }).then(function() { toast('Paramètres sauvegardés !'); });
+    });
+
+    document.getElementById('resetSettings').addEventListener('click', function() {
+        document.getElementById('setEmail').value = 'cnh4314@gmail.com';
+        document.getElementById('setPhone').value = '+1 450 230 2509';
+        document.getElementById('setWhatsapp').value = '14502302509';
+        document.getElementById('setHours').value = 'Lun-Ven: 8h–18h | Sam: 9h–16h | Dim: Sur rendez-vous';
+        document.getElementById('setAddress').value = 'Grand Montréal & Laurentides';
+        document.getElementById('setMsg').value = 'Bonjour CNH Service, je souhaite un devis pour un lavage auto.';
+    });
+
+    function esc(s) { var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+    // ── Check existing token ──
+    if (token) {
+        api('GET', '/api/auth/verify').then(function(data) {
+            if (data.valid) {
+                document.getElementById('loginOverlay').classList.add('hidden');
+                document.getElementById('adminLayout').classList.add('active');
+                loadDashboard();
+            }
+        }).catch(function() { logout(); });
+    }
+    </script>
+</body>
+</html>
