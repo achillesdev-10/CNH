@@ -6,7 +6,11 @@ const path = require('path');
 // (managed libSQL/SQLite) — this is the mode used on Vercel where the
 // filesystem is read-only and ephemeral.
 // Otherwise fall back to the local sql.js file (cnh_service.db).
-const USING_TURSO = !!(process.env.TURSO_DATABASE_URL && process.env.TURSO_AUTH_TOKEN);
+// NOTE: evaluated lazily, not at module load, because server.js loads
+// .env AFTER requiring this module.
+function usingTurso() {
+  return !!(process.env.TURSO_DATABASE_URL && process.env.TURSO_AUTH_TOKEN);
+}
 
 let db = null;      // sql.js Database instance (local mode)
 let client = null;  // libsql client (Turso mode)
@@ -127,7 +131,7 @@ async function seedTurso() {
 async function initDatabase() {
   if (initPromise) return initPromise;
   initPromise = (async () => {
-    if (USING_TURSO) {
+    if (usingTurso()) {
       const { createClient } = require('@libsql/client');
       client = createClient({
         url: process.env.TURSO_DATABASE_URL,
@@ -164,7 +168,7 @@ async function initDatabase() {
 // ── Query helpers (async in both modes) ────────────────────────
 async function queryAll(sql, params = []) {
   await initDatabase();
-  if (USING_TURSO) {
+  if (usingTurso()) {
     const res = await client.execute({ sql, args: params });
     return res.rows.map(row => (row.toJSON ? row.toJSON() : row));
   }
@@ -184,9 +188,12 @@ async function queryOne(sql, params = []) {
 // Runs a write query and returns the last inserted row id (or null)
 async function runSql(sql, params = []) {
   await initDatabase();
-  if (USING_TURSO) {
+  if (usingTurso()) {
     const res = await client.execute({ sql, args: params });
-    return res.lastInsertRowid ?? null;
+    // lastInsertRowid is a BigInt in @libsql/client — return a plain number
+    // like the local mode does, so it can be serialized in JSON responses.
+    const rid = res.lastInsertRowid;
+    return rid == null ? null : Number(rid);
   }
   db.run(sql, params);
   const res = db.exec('SELECT last_insert_rowid() as id');
@@ -196,13 +203,13 @@ async function runSql(sql, params = []) {
 
 // ── Persistence (local mode only; Turso persists server-side) ──
 function saveDatabase() {
-  if (USING_TURSO || !db) return;
+  if (usingTurso() || !db) return;
   const fs = require('fs');
   const data = db.export();
   fs.writeFileSync(path.join(__dirname, 'cnh_service.db'), Buffer.from(data));
 }
 
-if (!USING_TURSO) {
+if (!usingTurso()) {
   // Auto-save every 30 seconds (local mode)
   setInterval(saveDatabase, 30000);
 

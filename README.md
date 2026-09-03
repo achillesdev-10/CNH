@@ -26,7 +26,8 @@ npm start
 ├── deploy/
 │   └── nginx-cnh.conf # Exemple de reverse proxy Nginx
 ├── scripts/
-│   └── backup-db.js   # Sauvegarde DB + rétention (npm run backup)
+│   ├── backup-db.js   # Sauvegarde DB + rétention (npm run backup)
+│   └── set-password.js# Changer le mot de passe admin (local ou Turso)
 ├── cnh_service.db     # Base de données locale (auto-générée, hors Vercel)
 ├── public/
 │   ├── index.html     # Site principal
@@ -41,7 +42,21 @@ npm start
 |-------|--------|
 | URL | http://localhost:3000/admin |
 | Utilisateur | `admin` |
-| Mot de passe | `cnh2026` |
+| Mot de passe | **défini par vous** — voir `scripts/set-password.js` |
+
+> ⚠️ À la première installation, le script de seed crée le compte `admin` avec un
+> mot de passe par défaut **`cnh2026`** si aucun admin n'existe. **Changez-le
+> immédiatement avant toute mise en production** :
+>
+> ```bash
+> node scripts/set-password.js            # saisie interactive (masquée)
+> # ou sans interaction (CI) :
+> ADMIN_PASSWORD='...' node scripts/set-password.js
+> ```
+>
+> Le script fonctionne aussi bien sur la base locale (`cnh_service.db`) que sur
+> Turso (définissez `TURSO_DATABASE_URL` et `TURSO_AUTH_TOKEN`), et invalide les
+> sessions existantes de l'utilisateur après le changement.
 
 ## 📡 API Endpoints
 
@@ -184,6 +199,6 @@ turso db tokens create cnh-service   # récupérer le token d'accès
    - `TURSO_AUTH_TOKEN` → le token généré
    - (optionnel) `CORS_ORIGIN` → ex. `https://www.cnhservice.com`
 3. Déployer. `vercel.json` route toutes les requêtes vers `server.js` (les sessions et les données vivent dans Turso, pas sur le filesystem).
-4. Ouvrir `https://<projet>.vercel.app/admin` — l'admin par défaut est `admin` / `cnh2026` (à changer ensuite dans la table `admin_users`).
+4. Ouvrir `https://<projet>.vercel.app/admin` — connectez-vous avec le compte `admin` créé au premier démarrage, puis **changez immédiatement le mot de passe** avec `node scripts/set-password.js` (en définissant `TURSO_DATABASE_URL` / `TURSO_AUTH_TOKEN` pour viser la base Turso).
 
 > Les fichiers `cnh_service.db`, `backups/` et le script `scripts/backup-db.js` ne servent qu'en mode local/VPS : sur Vercel, les sauvegardes sont gérées par Turso.
