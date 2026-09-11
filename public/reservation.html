@@ -121,6 +121,21 @@
         .summary-row:last-child{border-bottom:none}.summary-row strong{color:var(--slate)}
         .summary-row .val{color:var(--gray-500)}
 
+        /* ── Extras ── */
+        .extras-block label{margin-bottom:10px}
+        .extra-opt{display:flex;align-items:flex-start;gap:12px;padding:14px 16px;border:2px solid var(--gray-200);border-radius:14px;background:var(--white);cursor:pointer;transition:all .3s cubic-bezier(.4,0,.2,1);margin-bottom:10px}
+        .extra-opt:hover{border-color:rgba(14,165,233,.3);transform:translateY(-2px);box-shadow:0 4px 14px rgba(0,0,0,.05)}
+        .extra-opt.selected{border-color:var(--blue);background:linear-gradient(135deg,rgba(14,165,233,.05),rgba(14,165,233,.02))}
+        .extra-opt input{width:18px;height:18px;margin-top:3px;accent-color:var(--blue);flex-shrink:0;cursor:pointer}
+        .extra-opt .eo-body{flex:1}
+        .extra-opt .eo-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+        .extra-opt .eo-head strong{font-size:.9rem;color:var(--slate)}
+        .extra-opt .eo-price{font-size:.9rem;font-weight:800;color:var(--blue);white-space:nowrap}
+        .extra-opt .eo-desc{display:block;font-size:.78rem;color:var(--gray-500);margin-top:4px;line-height:1.5}
+        .summary-row.total{border-top:2px solid rgba(14,165,233,.15);margin-top:6px;padding-top:12px}
+        .summary-row.total span:first-child{font-weight:700;color:var(--slate)}
+        .summary-row.total .val{font-size:1.05rem;font-weight:800;color:var(--blue)}
+
         /* ── Success ── */
         .success-card{text-align:center;padding:56px 28px;animation:fadeScale .6s ease}
         .success-icon{width:90px;height:90px;border-radius:50%;background:linear-gradient(135deg,rgba(16,185,129,.1),rgba(16,185,129,.05));color:var(--green);display:flex;align-items:center;justify-content:center;font-size:2.2rem;margin:0 auto 24px;animation:successPulse 2s ease infinite}
@@ -181,6 +196,7 @@
             <h2>Choisissez votre service</h2>
             <p class="subtitle">Sélectionnez le forfait qui correspond à vos besoins.</p>
             <div id="serviceCards" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px"></div>
+            <p style="margin-top:18px;font-size:.85rem;color:var(--gray-500)"><i class="fas fa-circle-plus" style="color:var(--blue);margin-right:6px"></i> Des options &amp; soins esthétiques (pneus, cuirs, cire express, tapis) pourront être ajoutées à l'étape 3.</p>
         </div>
 
         <!-- Step 2: Date & Time -->
@@ -226,12 +242,19 @@
                 <div class="form-group"><label>Code postal (optionnel)</label><input type="text" id="r_postal" placeholder="H1A 1A1"></div>
                 <div class="form-group"><label>Notes ou demandes spéciales (optionnel)</label><textarea id="r_notes" rows="3" placeholder="Ex: stationnement, accès, préférences..."></textarea></div>
 
+                <div class="form-group extras-block">
+                    <label>Options &amp; soins esthétiques <span style="font-weight:500;color:var(--gray-400)">(sur demande)</span></label>
+                    <div id="extrasList"></div>
+                </div>
+
                 <div class="summary" id="reservationSummary">
                     <h3><i class="fas fa-receipt"></i> Résumé de votre réservation</h3>
                     <div class="summary-row"><span>Service</span><strong id="sumService">—</strong></div>
                     <div class="summary-row"><span>Prix</span><strong id="sumPrice" style="color:var(--blue)">—</strong></div>
+                    <div class="summary-row"><span>Options &amp; extras</span><strong id="sumExtras">Aucune</strong></div>
                     <div class="summary-row"><span>Date</span><strong id="sumDate">—</strong></div>
                     <div class="summary-row"><span>Heure</span><strong id="sumTime">—</strong></div>
+                    <div class="summary-row total"><span>Total estimé</span><span class="val" id="sumTotal">—</span></div>
                 </div>
 
                 <div class="form-error" id="resError"></div>
@@ -253,8 +276,10 @@
                     <h3><i class="fas fa-receipt"></i> Détails</h3>
                     <div class="summary-row"><span>Réservation #</span><strong id="sumId">—</strong></div>
                     <div class="summary-row"><span>Service</span><strong id="sumService2">—</strong></div>
+                    <div class="summary-row"><span>Options &amp; extras</span><strong id="sumExtras2">Aucune</strong></div>
                     <div class="summary-row"><span>Date</span><strong id="sumDate2">—</strong></div>
                     <div class="summary-row"><span>Heure</span><strong id="sumTime2">—</strong></div>
+                    <div class="summary-row total"><span>Total estimé</span><span class="val" id="sumTotal2">—</span></div>
                 </div>
                 <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
                     <a href="/" class="btn btn-primary"><i class="fas fa-home"></i> Retour à l'accueil</a>
@@ -275,10 +300,18 @@
         { name: 'Nettoyage Moteur', price: 55, icon: 'fa-gears', desc: 'Dégraissant professionnel' },
         { name: 'Protection Cire', price: 65, icon: 'fa-shield-halved', desc: 'Cire haute protection' },
         { name: 'Forfait Confort', price: 70, icon: 'fa-star', desc: 'Extérieur + intérieur standard' },
-        { name: 'Forfait Premium', price: 120, icon: 'fa-crown', desc: 'Service complet premium' }
+        { name: 'Forfait Premium', price: 120, icon: 'fa-crown', desc: 'Service complet — 120 $ fixe, tous types de véhicules' }
     ];
 
-    var selected = { service: null, price: null, date: null, time: null };
+    // Options de soins esthétiques et extras (sur demande) — s'ajoutent au forfait choisi
+    var extras = [
+        { name: 'Nettoyage & Brillance des pneus', price: 15, desc: 'Dégraissage du flanc des pneus, poussière de frein et traitement lustrant longue durée (effet mouillé, protection UV).' },
+        { name: 'Soin & Traitement à la cire des cuirs', price: 45, desc: 'Nettoyage en profondeur des pores du cuir au savon doux, puis cire/crème nourrissante anti-craquelures.' },
+        { name: 'Protection carrosserie (Cire Express)', price: 30, desc: 'Cire de finition hydrophobe haute brillance appliquée après le lavage.' },
+        { name: 'Shampoing des tapis et tissus', price: 60, desc: 'Injection/extraction des taches tenaces, boue incrustée et odeurs (tapis de sol et sièges en tissu).' }
+    ];
+
+    var selected = { service: null, price: null, date: null, time: null, extras: [] };
     var calDate = new Date();
 
     // ── Scroll shadow for top bar ──
@@ -304,6 +337,44 @@
         selected.service = name; selected.price = price;
         renderServices();
         setTimeout(function(){ goToStep(2); }, 350);
+    }
+
+    // ── Extras (options cochables) ──
+    function renderExtras() {
+        var html = '';
+        extras.forEach(function(x) {
+            var on = selected.extras.indexOf(x.name) !== -1;
+            html += '<label class="extra-opt' + (on ? ' selected' : '') + '">';
+            html += '<input type="checkbox" value="' + x.name + '"' + (on ? ' checked' : '') + ' onchange="toggleExtra(this)">';
+            html += '<span class="eo-body"><span class="eo-head"><strong>' + x.name + '</strong>';
+            html += '<span class="eo-price">' + x.price + ',00 $</span></span>';
+            html += '<span class="eo-desc">' + x.desc + '</span></span></label>';
+        });
+        document.getElementById('extrasList').innerHTML = html;
+    }
+
+    function toggleExtra(cb) {
+        var name = cb.value;
+        if (cb.checked) {
+            if (selected.extras.indexOf(name) === -1) selected.extras.push(name);
+        } else {
+            selected.extras = selected.extras.filter(function(n) { return n !== name; });
+        }
+        renderExtras();
+        updateSummary();
+    }
+
+    function extrasTotal() {
+        return selected.extras.reduce(function(sum, name) {
+            for (var i = 0; i < extras.length; i++) {
+                if (extras[i].name === name) return sum + extras[i].price;
+            }
+            return sum;
+        }, 0);
+    }
+
+    function reservationTotal() {
+        return (selected.price || 0) + extrasTotal();
     }
 
     // ── Calendar ──
@@ -383,8 +454,10 @@
     function updateSummary() {
         document.getElementById('sumService').textContent = selected.service || '—';
         document.getElementById('sumPrice').textContent = selected.price ? selected.price + '$' : '—';
+        document.getElementById('sumExtras').textContent = selected.extras.length ? selected.extras.join(', ') : 'Aucune';
         document.getElementById('sumDate').textContent = selected.date ? formatDisplayDate(selected.date) : '—';
         document.getElementById('sumTime').textContent = selected.time || '—';
+        document.getElementById('sumTotal').textContent = selected.price ? reservationTotal() + '$' : '—';
     }
 
     // ── Step navigation ──
@@ -437,15 +510,18 @@
                 address: address, city: city,
                 postal_code: document.getElementById('r_postal').value.trim() || null,
                 date: selected.date, time: selected.time,
-                notes: document.getElementById('r_notes').value.trim() || null
+                notes: document.getElementById('r_notes').value.trim() || null,
+                extras: selected.extras.length ? selected.extras.join(', ') : null
             })
         }).then(function(r){ return r.json(); })
         .then(function(data) {
             if (data.success) {
                 document.getElementById('sumId').textContent = '#' + data.id;
                 document.getElementById('sumService2').textContent = selected.service;
+                document.getElementById('sumExtras2').textContent = selected.extras.length ? selected.extras.join(', ') : 'Aucune';
                 document.getElementById('sumDate2').textContent = formatDisplayDate(selected.date);
                 document.getElementById('sumTime2').textContent = selected.time;
+                document.getElementById('sumTotal2').textContent = reservationTotal() + '$';
                 goToStep(4);
             } else {
                 errEl.innerHTML = '<i class="fas fa-exclamation-circle"></i> ' + (data.error || 'Erreur lors de la réservation.');
@@ -461,14 +537,16 @@
     });
 
     function resetReservation() {
-        selected = { service: null, price: null, date: null, time: null };
+        selected = { service: null, price: null, date: null, time: null, extras: [] };
         document.getElementById('reservationForm').reset();
         goToStep(1);
         renderServices();
+        renderExtras();
     }
 
     // ── Init ──
     renderServices();
+    renderExtras();
     renderCalendar();
     </script>
 </body>

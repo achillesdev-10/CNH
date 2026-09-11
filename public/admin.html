@@ -404,10 +404,13 @@
 
     function reservationsTable(list, full) {
         if (!list || !list.length) return '<div class="empty-state"><i class="fas fa-calendar-xmark"></i><p>Aucune réservation</p></div>';
-        var html = '<table><thead><tr><th>#</th><th>Nom</th><th>Service</th>'+(full?'<th>Véhicule</th>':'')+'<th>Date</th><th>Heure</th><th>Statut</th><th>Actions</th></tr></thead><tbody>';
+        var html = '<table><thead><tr><th>#</th><th>Nom</th><th>Service</th>'+(full?'<th>Véhicule</th><th>Extras</th>':'')+'<th>Date</th><th>Heure</th><th>Statut</th><th>Actions</th></tr></thead><tbody>';
         list.forEach(function(r) {
             html += '<tr><td>#'+r.id+'</td><td>'+esc(r.name)+'</td><td>'+esc(r.service)+'</td>';
-            if (full) html += '<td>'+esc(r.vehicle_type)+'</td>';
+            if (full) {
+                html += '<td>'+esc(r.vehicle_type)+'</td>';
+                html += '<td style="max-width:220px" title="'+esc(r.extras || '—')+'">'+esc(r.extras || '—')+'</td>';
+            }
             html += '<td>'+r.reservation_date+'</td><td>'+r.reservation_time+'</td>';
             html += '<td><span class="badge '+r.status+'">'+(labels[r.status]||r.status)+'</span></td>';
             html += '<td style="white-space:nowrap">';

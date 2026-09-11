@@ -44,14 +44,32 @@ function generateToken() { return crypto.randomBytes(32).toString('hex'); }
 // Wrap async route handlers so rejected promises reach the error middleware
 const asyncHandler = fn => (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
 
+// Heures de rendez-vous proposées (source unique de vérité)
+const TIME_SLOTS = ['08:00','09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00'];
+
+// Clés autorisées pour les paramètres publics du site
+const ALLOWED_SETTINGS = ['email', 'phone', 'whatsapp', 'hours', 'address', 'welcome_msg', 'site_title'];
+
+const cleanInt = (value, def, min, max) => {
+  const n = parseInt(value, 10);
+  if (Number.isNaN(n)) return def;
+  return Math.min(max, Math.max(min, n));
+};
+
+const isValidEmail = value => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || ''));
+
 // Sessions are stored in the database so they survive serverless cold starts
 async function authMiddleware(req, res, next) {
-  const token = req.headers.authorization?.replace('Bearer ', '');
-  if (!token) return res.status(401).json({ error: 'Non autorisé' });
-  const session = await queryOne('SELECT admin_id FROM sessions WHERE token = ?', [token]);
-  if (!session) return res.status(401).json({ error: 'Non autorisé' });
-  req.adminId = session.admin_id;
-  next();
+  try {
+    const token = req.headers.authorization?.replace('Bearer ', '');
+    if (!token) return res.status(401).json({ error: 'Non autorisé' });
+    const session = await queryOne('SELECT admin_id FROM sessions WHERE token = ?', [token]);
+    if (!session) return res.status(401).json({ error: 'Non autorisé' });
+    req.adminId = session.admin_id;
+    next();
+  } catch (err) {
+    next(err);
+  }
 }
 
 // ══════════════════════════════════════
@@ -86,7 +104,7 @@ app.get('/api/auth/verify', authMiddleware, (req, res) => { res.json({ valid: tr
 app.post('/api/contacts', asyncHandler(async (req, res) => {
   const { name, email, phone, service, message, date } = req.body;
   if (!name || !email || !phone || !service || !message) return res.status(400).json({ error: 'Tous les champs sont requis' });
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return res.status(400).json({ error: 'Email invalide' });
+  if (!isValidEmail(email)) return res.status(400).json({ error: 'Email invalide' });
   try {
     const id = await runSql('INSERT INTO contacts (name, email, phone, service, message, date_wished) VALUES (?, ?, ?, ?, ?, ?)',
       [name, email, phone, service, message, date || null]);
@@ -105,7 +123,7 @@ app.get('/api/contacts', authMiddleware, asyncHandler(async (req, res) => {
   if (status) { sql += ' WHERE status = ?'; params.push(status); }
   const total = await queryOne('SELECT COUNT(*) as count FROM contacts' + (status ? ' WHERE status = ?' : ''), status ? [status] : []);
   sql += ' ORDER BY created_at DESC LIMIT ? OFFSET ?';
-  params.push(parseInt(limit), parseInt(offset));
+  params.push(cleanInt(limit, 50, 1, 200), cleanInt(offset, 0, 0, 1000000));
   const contacts = await queryAll(sql, params);
   res.json({ contacts, total: total?.count || 0 });
 }));
@@ -124,21 +142,24 @@ app.patch('/api/contacts/:id', authMiddleware, asyncHandler(async (req, res) => 
 app.get('/api/reservations/slots', asyncHandler(async (req, res) => {
   const { date } = req.query;
   if (!date) return res.status(400).json({ error: 'Date requise' });
-  const allSlots = ['08:00','09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00'];
   const booked = (await queryAll("SELECT reservation_time FROM reservations WHERE reservation_date = ? AND status IN ('pending','confirmed')", [date])).map(r => r.reservation_time);
-  res.json({ date, slots: allSlots.map(time => ({ time, available: !booked.includes(time) })) });
+  res.json({ date, slots: TIME_SLOTS.map(time => ({ time, available: !booked.includes(time) })) });
 }));
 
 app.post('/api/reservations', asyncHandler(async (req, res) => {
-  const { name, email, phone, vehicle_type, vehicle_plate, service, address, city, postal_code, date, time, notes } = req.body;
+  const { name, email, phone, vehicle_type, vehicle_plate, service, address, city, postal_code, date, time, notes, extras } = req.body;
   if (!name || !email || !phone || !vehicle_type || !service || !address || !city || !date || !time) {
     return res.status(400).json({ error: 'Tous les champs obligatoires sont requis' });
   }
+  if (!isValidEmail(email)) return res.status(400).json({ error: 'Email invalide' });
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(date))) return res.status(400).json({ error: 'Date invalide' });
+  if (!TIME_SLOTS.includes(time)) return res.status(400).json({ error: 'Heure invalide' });
+  const cleanExtras = extras == null || extras === '' ? null : String(extras).trim().slice(0, 500);
   const existing = await queryOne("SELECT id FROM reservations WHERE reservation_date = ? AND reservation_time = ? AND status IN ('pending','confirmed')", [date, time]);
   if (existing) return res.status(409).json({ error: 'Ce créneau est déjà réservé.' });
   try {
-    const id = await runSql('INSERT INTO reservations (name, email, phone, vehicle_type, vehicle_plate, service, address, city, postal_code, reservation_date, reservation_time, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-      [name, email, phone, vehicle_type, vehicle_plate || null, service, address, city, postal_code || null, date, time, notes || null]);
+    const id = await runSql('INSERT INTO reservations (name, email, phone, vehicle_type, vehicle_plate, service, address, city, postal_code, reservation_date, reservation_time, notes, extras) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [name, email, phone, vehicle_type, vehicle_plate || null, service, address, city, postal_code || null, date, time, notes || null, cleanExtras]);
     await runSql("INSERT INTO stats (type, value) VALUES ('reservation', 1)");
     res.json({ success: true, id });
   } catch (err) {
@@ -149,13 +170,14 @@ app.post('/api/reservations', asyncHandler(async (req, res) => {
 
 app.get('/api/reservations', authMiddleware, asyncHandler(async (req, res) => {
   const { status, date, limit = 50, offset = 0 } = req.query;
-  let sql = 'SELECT * FROM reservations WHERE 1=1';
+  let where = '';
   const params = [];
-  if (status) { sql += ' AND status = ?'; params.push(status); }
-  if (date) { sql += ' AND reservation_date = ?'; params.push(date); }
-  const total = await queryOne('SELECT COUNT(*) as count FROM reservations', []);
-  sql += ' ORDER BY reservation_date ASC, reservation_time ASC LIMIT ? OFFSET ?';
-  params.push(parseInt(limit), parseInt(offset));
+  if (status) { where += ' AND status = ?'; params.push(status); }
+  if (date) { where += ' AND reservation_date = ?'; params.push(date); }
+  // Le total doit refléter les mêmes filtres que la liste
+  const total = await queryOne('SELECT COUNT(*) as count FROM reservations WHERE 1=1' + where, params);
+  const sql = 'SELECT * FROM reservations WHERE 1=1' + where + ' ORDER BY reservation_date ASC, reservation_time ASC LIMIT ? OFFSET ?';
+  params.push(cleanInt(limit, 50, 1, 200), cleanInt(offset, 0, 0, 1000000));
   const reservations = await queryAll(sql, params);
   res.json({ reservations, total: total?.count || 0 });
 }));
@@ -233,7 +255,14 @@ app.get('/api/settings', asyncHandler(async (req, res) => {
 }));
 
 app.put('/api/settings', authMiddleware, asyncHandler(async (req, res) => {
-  for (const [key, value] of Object.entries(req.body)) {
+  const updates = {};
+  for (const [key, value] of Object.entries(req.body || {})) {
+    // N'accepter que les clés connues et des valeurs texte simples
+    if (!ALLOWED_SETTINGS.includes(key)) continue;
+    if (value === null || value === undefined || typeof value === 'object') continue;
+    updates[key] = String(value).slice(0, 500);
+  }
+  for (const [key, value] of Object.entries(updates)) {
     const existing = await queryOne('SELECT key FROM settings WHERE key = ?', [key]);
     if (existing) {
       await runSql("UPDATE settings SET value = ?, updated_at = datetime('now') WHERE key = ?", [value, key]);
@@ -299,6 +328,9 @@ app.delete('/api/testimonials/:id', authMiddleware, asyncHandler(async (req, res
 
 app.get('/reservation', (req, res) => res.sendFile(path.join(__dirname, 'public', 'reservation.html')));
 app.get('/admin', (req, res) => res.sendFile(path.join(__dirname, 'public', 'admin.html')));
+
+// ── 404 JSON pour les routes API inconnues ──
+app.use('/api', (req, res) => res.status(404).json({ error: 'Route inconnue' }));
 
 // ── Error handling ──
 app.use((err, req, res, next) => {

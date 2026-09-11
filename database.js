@@ -49,6 +49,7 @@ const SCHEMA = [
     reservation_date TEXT NOT NULL,
     reservation_time TEXT NOT NULL,
     notes TEXT,
+    extras TEXT,
     status TEXT DEFAULT 'pending',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   )`,
@@ -127,6 +128,34 @@ async function seedTurso() {
   }
 }
 
+// ── Migrations (idempotentes, exécutées à chaque démarrage) ────
+// Les bases créées avant l'ajout de la colonne `extras` ont besoin d'un
+// ALTER TABLE : CREATE TABLE IF NOT EXISTS ne modifie pas une table existante.
+async function hasReservationsExtrasColumn() {
+  if (usingTurso()) {
+    const res = await client.execute({ sql: "SELECT name FROM pragma_table_info('reservations')" });
+    return res.rows.some(row => row.name === 'extras');
+  }
+  const res = db.exec("SELECT name FROM pragma_table_info('reservations')");
+  return !!(res.length && res[0].values.some(v => v[0] === 'extras'));
+}
+
+async function migrate() {
+  try {
+    if (await hasReservationsExtrasColumn()) return;
+    if (usingTurso()) {
+      await client.execute({ sql: 'ALTER TABLE reservations ADD COLUMN extras TEXT' });
+    } else {
+      db.run('ALTER TABLE reservations ADD COLUMN extras TEXT');
+      saveDatabase();
+    }
+    console.log('✅ Migration : colonne reservations.extras ajoutée');
+  } catch (err) {
+    // Ne jamais empêcher le démarrage de l'application à cause d'une migration
+    console.warn('⚠️  Migration reservations.extras ignorée :', err.message);
+  }
+}
+
 // ── Init ───────────────────────────────────────────────────────
 async function initDatabase() {
   if (initPromise) return initPromise;
@@ -138,6 +167,7 @@ async function initDatabase() {
         authToken: process.env.TURSO_AUTH_TOKEN
       });
       for (const sql of SCHEMA) await client.execute({ sql });
+      await migrate();
       await seedTurso();
       console.log('✅ Turso database ready');
       return client;
@@ -157,6 +187,7 @@ async function initDatabase() {
     }
 
     for (const sql of SCHEMA) db.run(sql);
+    await migrate();
     seedLocal();
     saveDatabase();
     console.log('✅ Local SQLite database initialized');

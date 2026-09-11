@@ -111,7 +111,7 @@ Deux modes, détectés automatiquement dans `database.js` :
 Tables :
 - `admin_users` — Utilisateurs administrateurs
 - `contacts` — Messages du formulaire de contact
-- `reservations` — Réservations en ligne
+- `reservations` — Réservations en ligne (colonne `extras` : options de soins esthétiques et extras choisis)
 - `settings` — Paramètres du site
 - `stats` — Statistiques de visite
 - `testimonials` — Témoignages clients (modérés)

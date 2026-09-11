@@ -78,6 +78,8 @@
         .nav a{text-decoration:none;color:var(--white);font-weight:500;font-size:.9rem;padding:8px 16px;border-radius:10px;transition:all .3s ease}
         .header.scrolled .nav a{color:var(--slate)}.header.scrolled .nav a:hover{background:var(--blue-light);color:var(--blue)}
         .nav a:hover{background:rgba(255,255,255,.15)}
+        .nav a.active{background:var(--blue-light);color:var(--blue)}
+        .header:not(.scrolled) .nav a.active{background:rgba(255,255,255,.18);color:var(--white)}
         .nav .btn-nav{background:var(--blue);color:var(--white)!important;font-weight:600;padding:10px 22px;box-shadow:0 2px 10px rgba(14,165,233,.3)}
         .nav .btn-nav:hover{background:var(--blue-dark);box-shadow:0 4px 16px rgba(14,165,233,.4);transform:translateY(-1px)}
         .menu-toggle{display:none;background:none;border:none;font-size:1.5rem;color:var(--white);cursor:pointer;padding:8px;transition:var(--transition)}
@@ -209,6 +211,20 @@
         .pricing-features li:last-child{border-bottom:none}
         .pricing-features li i{color:var(--green);font-size:.9rem;flex-shrink:0;width:20px;text-align:center}
 
+        /* ── Extras ── */
+        .extras{background:var(--white);border-top:1px solid var(--gray-100)}
+        .extras-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px}
+        .extra-card{background:var(--gray-100);border:1px solid var(--gray-200);border-radius:var(--radius-lg);padding:28px;display:flex;flex-direction:column;transition:all .4s cubic-bezier(.4,0,.2,1)}
+        .extra-card:hover{transform:translateY(-6px);box-shadow:var(--shadow-lg);background:var(--white);border-color:var(--blue-light)}
+        .extra-icon{width:52px;height:52px;border-radius:14px;background:linear-gradient(135deg,rgba(14,165,233,.12),rgba(14,165,233,.05));color:var(--blue);display:flex;align-items:center;justify-content:center;font-size:1.25rem;margin-bottom:16px}
+        .extra-card:hover .extra-icon{transform:scale(1.08) rotate(-5deg)}
+        .extra-card h3{font-size:1.05rem;color:var(--slate);margin-bottom:10px}
+        .extra-card p{font-size:.88rem;color:var(--gray-500);line-height:1.7;flex:1;margin-bottom:18px}
+        .extra-price{font-size:1.2rem;font-weight:800;color:var(--blue)}
+        .extra-price span{font-size:.85rem;font-weight:500;color:var(--gray-400)}
+        .extras-note{text-align:center;margin-top:32px;font-size:.9rem;color:var(--gray-500)}
+        .extras-note i{color:var(--blue);margin-right:6px}
+
         /* ── Testimonials ── */
         .testimonials{background:var(--white)}
         .testimonials-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:24px}
@@ -297,6 +313,7 @@
                     <li><a href="#accueil" class="nav-link">Accueil</a></li>
                     <li><a href="#services" class="nav-link">Services</a></li>
                     <li><a href="#tarifs" class="nav-link">Tarifs</a></li>
+                    <li><a href="#extras" class="nav-link">Extras</a></li>
                     <li><a href="#apropos" class="nav-link">À propos</a></li>
                     <li><a href="#contact" class="nav-link">Contact</a></li>
                     <li><a href="/reservation" class="nav-link btn-nav"><i class="fas fa-calendar-check"></i> Réserver</a></li>
@@ -381,8 +398,8 @@
                 <div class="service-card reveal">
                     <div class="service-img"><img src="https://images.unsplash.com/photo-1543857182-68106299b6b2?w=800&q=85" alt="Lavage d'un VUS par deux techniciens professionnels" loading="lazy"></div>
                     <div class="service-body">
-                        <div class="service-icon navy"><i class="fas fa-truck-pickup"></i></div><h3>Véhicules Gros Volume</h3><p>SUV, camions, minivans — tarifs adaptés aux véhicules de grande taille.</p>
-                        <div class="price">À partir de 50$</div><a href="/reservation" class="btn btn-primary">Réserver</a>
+                        <div class="service-icon navy"><i class="fas fa-truck-pickup"></i></div><h3>Tous types de véhicules</h3><p>Berline, VUS, minivan, camion ou pick-up : le même tarif unique de 120 $ pour un lavage complet.</p>
+                        <div class="price">120$ <span style="font-size:.9rem;font-weight:500;color:var(--gray-400)">/ véhicule</span></div><a href="/reservation" class="btn btn-primary">Réserver</a>
                     </div>
                 </div>
             </div>
@@ -449,12 +466,45 @@
 
     <section class="section pricing" id="tarifs">
         <div class="container">
-            <div class="section-header reveal"><div class="badge"><i class="fas fa-tag"></i> Tarifs</div><h2>Nos forfaits populaires</h2><p>Des prix clairs et compétitifs pour tous les budgets.</p></div>
+            <div class="section-header reveal"><div class="badge"><i class="fas fa-tag"></i> Tarifs</div><h2>Nos forfaits populaires</h2><p>Des prix clairs et compétitifs. Le forfait complet est à 120 $ à prix fixe, peu importe le type de véhicule.</p></div>
             <div class="pricing-grid">
-                <div class="pricing-card reveal"><h3>Essentiel</h3><div class="price">35$ <span>/ lavage</span></div><ul class="pricing-features"><li><i class="fas fa-check"></i> Lavage extérieur complet</li><li><i class="fas fa-check"></i> Jantes & pneus</li><li><i class="fas fa-check"></i> Essuie-glaces</li><li><i class="fas fa-check"></i> Séchage</li></ul><a href="/reservation" class="btn btn-primary btn-block">Choisir ce forfait</a></div>
-                <div class="pricing-card featured reveal"><h3>Confort</h3><div class="price">70$ <span>/ lavage</span></div><ul class="pricing-features"><li><i class="fas fa-check"></i> Tout le forfait Essentiel</li><li><i class="fas fa-check"></i> Aspiration intérieure</li><li><i class="fas fa-check"></i> Nettoyage tableau de bord</li><li><i class="fas fa-check"></i> Dressing des pneus</li><li><i class="fas fa-check"></i> Rafraîchissement odeurs</li></ul><a href="/reservation" class="btn btn-primary btn-block">Choisir ce forfait</a></div>
-                <div class="pricing-card reveal"><h3>Premium</h3><div class="price">120$ <span>/ lavage</span></div><ul class="pricing-features"><li><i class="fas fa-check"></i> Tout le forfait Confort</li><li><i class="fas fa-check"></i> Cire haute protection</li><li><i class="fas fa-check"></i> Nettoyage moteur</li><li><i class="fas fa-check"></i> Traitement cuir/vinyle</li><li><i class="fas fa-check"></i> Nettoyage des tapis</li></ul><a href="/reservation" class="btn btn-primary btn-block">Choisir ce forfait</a></div>
+                <div class="pricing-card reveal"><h3>Essentiel</h3><div class="price">35$ <span>/ véhicule</span></div><ul class="pricing-features"><li><i class="fas fa-check"></i> Lavage extérieur complet</li><li><i class="fas fa-check"></i> Jantes & pneus</li><li><i class="fas fa-check"></i> Essuie-glaces</li><li><i class="fas fa-check"></i> Séchage</li></ul><a href="/reservation" class="btn btn-primary btn-block">Choisir ce forfait</a></div>
+                <div class="pricing-card featured reveal"><h3>Confort</h3><div class="price">70$ <span>/ véhicule</span></div><ul class="pricing-features"><li><i class="fas fa-check"></i> Tout le forfait Essentiel</li><li><i class="fas fa-check"></i> Aspiration intérieure</li><li><i class="fas fa-check"></i> Nettoyage tableau de bord</li><li><i class="fas fa-check"></i> Dressing des pneus</li><li><i class="fas fa-check"></i> Rafraîchissement odeurs</li></ul><a href="/reservation" class="btn btn-primary btn-block">Choisir ce forfait</a></div>
+                <div class="pricing-card reveal"><h3>Premium</h3><div class="price">120$ <span>/ véhicule</span></div><ul class="pricing-features"><li><i class="fas fa-check"></i> Tout le forfait Confort</li><li><i class="fas fa-check"></i> Tous types de véhicules (prix fixe)</li><li><i class="fas fa-check"></i> Cire haute protection</li><li><i class="fas fa-check"></i> Nettoyage moteur</li><li><i class="fas fa-check"></i> Traitement cuir/vinyle</li><li><i class="fas fa-check"></i> Nettoyage des tapis</li></ul><a href="/reservation" class="btn btn-primary btn-block">Choisir ce forfait</a></div>
             </div>
+        </div>
+    </section>
+
+    <section class="section extras" id="extras">
+        <div class="container">
+            <div class="section-header reveal"><div class="badge"><i class="fas fa-wand-magic-sparkles"></i> Options &amp; Extras</div><h2>Options de soins esthétiques et Extras</h2><p>Services additionnels disponibles <strong>sur demande</strong>, en complément de votre forfait.</p></div>
+            <div class="extras-grid">
+                <div class="extra-card reveal">
+                    <div class="extra-icon"><i class="fas fa-circle-dot"></i></div>
+                    <h3>Nettoyage &amp; Brillance des pneus</h3>
+                    <p>Dégraissage complet du flanc des pneus, élimination de la poussière de frein et application d'un traitement lustrant longue durée (effet mouillé et protecteur UV).</p>
+                    <div class="extra-price">15,00 $ <span>/ véhicule</span></div>
+                </div>
+                <div class="extra-card reveal">
+                    <div class="extra-icon"><i class="fas fa-couch"></i></div>
+                    <h3>Soin &amp; Traitement à la cire des cuirs</h3>
+                    <p>Nettoyage en profondeur des pores du cuir avec un savon doux spécifique, suivi de l'application d'une cire/crème nourrissante qui redonne de la souplesse et prévient les craquelures.</p>
+                    <div class="extra-price">45,00 $ <span>/ véhicule</span></div>
+                </div>
+                <div class="extra-card reveal">
+                    <div class="extra-icon"><i class="fas fa-shield-halved"></i></div>
+                    <h3>Protection carrosserie (Cire Express)</h3>
+                    <p>Application d'une cire de finition hydrophobe à haute brillance après lavage, protégeant la peinture contre les agressions du béton et de la saleté de chantier.</p>
+                    <div class="extra-price">30,00 $ <span>/ véhicule</span></div>
+                </div>
+                <div class="extra-card reveal">
+                    <div class="extra-icon"><i class="fas fa-water"></i></div>
+                    <h3>Shampoing des tapis et tissus</h3>
+                    <p>Extraction par injection/extraction des taches tenaces, boue incrustée et odeurs dans les tapis de sol et sièges en tissu des cabines.</p>
+                    <div class="extra-price">60,00 $ <span>/ véhicule</span></div>
+                </div>
+            </div>
+            <p class="extras-note reveal"><i class="fas fa-circle-info"></i> Ces options s'ajoutent au forfait choisi et peuvent être cochées directement lors de la réservation.</p>
         </div>
     </section>
 
@@ -507,7 +557,7 @@
                 <div class="contact-form-card reveal-right">
                     <form id="formContact" novalidate>
                         <div class="form-row"><div class="form-group"><label for="c_name">Nom complet *</label><input type="text" id="c_name" required minlength="2" maxlength="100" placeholder="Votre nom"></div><div class="form-group"><label for="c_email">Email *</label><input type="email" id="c_email" required placeholder="votre@email.com"></div></div>
-                        <div class="form-row"><div class="form-group"><label for="c_phone">Téléphone *</label><input type="tel" id="c_phone" required placeholder="+1 450 123 4567"></div><div class="form-group"><label for="c_service">Service demandé *</label><select id="c_service" required><option value="" disabled selected>Sélectionnez un service</option><option>Lavage Extérieur</option><option>Lavage Intérieur</option><option>Detailing Complet</option><option>Nettoyage Moteur</option><option>Protection Cire</option><option>Forfait Confort</option><option>Forfait Premium</option><option>Autre</option></select></div></div>
+                        <div class="form-row"><div class="form-group"><label for="c_phone">Téléphone *</label><input type="tel" id="c_phone" required placeholder="+1 450 123 4567"></div><div class="form-group"><label for="c_service">Service demandé *</label><select id="c_service" required><option value="" disabled selected>Sélectionnez un service</option><option>Lavage Extérieur</option><option>Lavage Intérieur</option><option>Detailing Complet</option><option>Nettoyage Moteur</option><option>Protection Cire</option><option>Forfait Confort</option><option>Forfait Premium</option><option>Nettoyage &amp; Brillance des pneus (15 $)</option><option>Soin &amp; Traitement à la cire des cuirs (45 $)</option><option>Protection carrosserie — Cire Express (30 $)</option><option>Shampoing des tapis et tissus (60 $)</option><option>Autre</option></select></div></div>
                         <div class="form-group"><label for="c_message">Message *</label><textarea id="c_message" rows="4" required placeholder="Décrivez votre véhicule, l'emplacement, la date souhaitée..."></textarea></div>
                         <div class="form-group"><label for="c_date">Date souhaitée (optionnel)</label><input type="date" id="c_date"></div>
                         <div class="hp" aria-hidden="true"><label for="hp">Ne pas remplir</label><input type="text" id="hp" tabindex="-1" autocomplete="off"></div>
@@ -536,7 +586,7 @@
                     <p>Service de lavage auto professionnel à domicile dans le Grand Montréal et les Laurentides.</p>
                     <div class="social-links"><a href="https://facebook.com" target="_blank" rel="noopener" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a><a href="https://instagram.com" target="_blank" rel="noopener" aria-label="Instagram"><i class="fab fa-instagram"></i></a><a href="https://wa.me/14502302509" target="_blank" rel="noopener" aria-label="WhatsApp"><i class="fab fa-whatsapp"></i></a></div>
                 </div>
-                <div class="footer-col"><h4>Liens rapides</h4><ul><li><a href="#accueil">Accueil</a></li><li><a href="#services">Services</a></li><li><a href="#tarifs">Tarifs</a></li><li><a href="#apropos">À propos</a></li><li><a href="#contact">Contact</a></li><li><a href="/reservation">Réservation</a></li></ul></div>
+                <div class="footer-col"><h4>Liens rapides</h4><ul><li><a href="#accueil">Accueil</a></li><li><a href="#services">Services</a></li><li><a href="#tarifs">Tarifs</a></li><li><a href="#extras">Extras</a></li><li><a href="#apropos">À propos</a></li><li><a href="#contact">Contact</a></li><li><a href="/reservation">Réservation</a></li></ul></div>
                 <div class="footer-col"><h4>Services</h4><ul><li><a href="#services">Lavage Extérieur</a></li><li><a href="#services">Lavage Intérieur</a></li><li><a href="#services">Detailing Complet</a></li><li><a href="#services">Nettoyage Moteur</a></li><li><a href="#services">Protection Cire</a></li></ul></div>
                 <div class="footer-col"><h4>Contact</h4><ul><li><i class="fas fa-envelope" style="color:var(--blue);margin-right:8px;width:16px"></i><a href="mailto:cnh4314@gmail.com">cnh4314@gmail.com</a></li><li><i class="fas fa-phone" style="color:var(--blue);margin-right:8px;width:16px"></i><a href="tel:+14502302509">+1 450 230 2509</a></li><li><i class="fas fa-map-marker-alt" style="color:var(--blue);margin-right:8px;width:16px"></i><span>Grand Montréal &amp; Laurentides</span></li></ul></div>
             </div>
@@ -587,10 +637,10 @@
             },25);
         }
         function heroStatEl(id){return document.getElementById(id)}
-        // 'Véhicules lavés' — valeur de démonstration (historique du service avant la mise en ligne du site)
-        animateNum(heroStatEl('statVehicles').querySelector('strong'), 500, '+');
+        // 'Véhicules lavés' = historique du service avant la mise en ligne + réservations terminées en base
         // 'Avis clients' et '% Satisfaction' — calculés sur les vrais avis de la base de données
         fetch('/api/stats/public').then(function(r){return r.json()}).then(function(s){
+            animateNum(heroStatEl('statVehicles').querySelector('strong'), 500 + (parseInt(s.vehiclesWashed,10)||0), '+');
             if(s.ratingCount>0 && s.avgRating!=null){
                 heroStatEl('statRating').querySelector('strong').textContent=Number(s.avgRating).toFixed(1)+' ★';
                 document.getElementById('ratingLabel').textContent='Avis clients ('+s.ratingCount+')';
@@ -601,6 +651,7 @@
                 heroStatEl('statSatisfaction').style.display='none';
             }
         }).catch(function(){
+            animateNum(heroStatEl('statVehicles').querySelector('strong'), 500, '+');
             ['statRating','statSatisfaction'].forEach(function(id){
                 heroStatEl(id).querySelector('strong').textContent='—';
             });
@@ -657,8 +708,8 @@
                 var id=section.getAttribute('id');
                 var link=document.querySelector('.nav a[href="#'+id+'"]');
                 if(link){
-                    if(scrollY>=top&&scrollY<top+height)link.style.color='var(--blue)';
-                    else link.style.color='';
+                    // classe CSS (et non style inline) pour rester lisible sur le hero sombre
+                    link.classList.toggle('active', scrollY>=top&&scrollY<top+height);
                 }
             });
         });
