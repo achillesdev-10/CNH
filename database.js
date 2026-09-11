@@ -50,8 +50,24 @@ const SCHEMA = [
     reservation_time TEXT NOT NULL,
     notes TEXT,
     extras TEXT,
+    price_total REAL,
     status TEXT DEFAULT 'pending',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )`,
+  `CREATE TABLE IF NOT EXISTS pricing (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    category TEXT NOT NULL,
+    name TEXT NOT NULL,
+    description TEXT,
+    price REAL NOT NULL DEFAULT 0,
+    unit TEXT DEFAULT '/ véhicule',
+    icon TEXT,
+    features TEXT,
+    price_from INTEGER DEFAULT 0,
+    bookable INTEGER DEFAULT 1,
+    active INTEGER DEFAULT 1,
+    sort_order INTEGER DEFAULT 0,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
   )`,
   `CREATE TABLE IF NOT EXISTS settings (
     key TEXT PRIMARY KEY,
@@ -79,6 +95,44 @@ const SCHEMA = [
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   )`
 ];
+
+// ── Grille tarifaire par défaut ─────────────────────────────────
+// Insérée uniquement si la table `pricing` est vide. Ensuite, tout est
+// modifiable depuis l'admin (onglet Tarifs) sans toucher au code.
+const DEFAULT_PRICING = [
+  // Services à l'unité
+  { category: 'service', name: 'Lavage Extérieur', price: 35, icon: 'fa-spray-can-sparkles', price_from: 1, bookable: 1, sort_order: 1, description: 'Lavage complet de la carrosserie, des jantes, des pneus et des vitres avec produits biologiques.' },
+  { category: 'service', name: 'Lavage Intérieur', price: 45, icon: 'fa-couch', price_from: 1, bookable: 1, sort_order: 2, description: 'Aspiration, nettoyage du tableau de bord, des sièges, des portes et traitement des odeurs.' },
+  { category: 'service', name: 'Detailing Complet', price: 85, icon: 'fa-wand-magic-sparkles', price_from: 1, bookable: 1, sort_order: 3, description: 'Lavage extérieur et intérieur complet + cire, dressing des pneus et finition premium.' },
+  { category: 'service', name: 'Nettoyage Moteur', price: 55, icon: 'fa-gears', price_from: 1, bookable: 1, sort_order: 4, description: 'Nettoyage en profondeur du compartiment moteur avec dégraissant professionnel.' },
+  { category: 'service', name: 'Protection Cire', price: 65, icon: 'fa-shield-halved', price_from: 1, bookable: 1, sort_order: 5, description: 'Application de cire haute protection pour garder votre voiture brillante plus longtemps.' },
+  { category: 'service', name: 'Tous types de véhicules', price: 120, icon: 'fa-truck-pickup', price_from: 0, bookable: 0, sort_order: 6, description: 'Berline, VUS, minivan, camion ou pick-up : le même tarif unique de 120 $ pour un lavage complet.' },
+
+  // Forfaits (affichés dans la section Tarifs)
+  { category: 'package', name: 'Essentiel', price: 35, icon: 'fa-star', price_from: 0, bookable: 1, sort_order: 1, description: 'Lavage extérieur complet, jantes, pneus et séchage.', features: ['Lavage extérieur complet', 'Jantes & pneus', 'Essuie-glaces', 'Séchage'] },
+  { category: 'package', name: 'Confort', price: 70, icon: 'fa-star', price_from: 0, bookable: 1, sort_order: 2, description: 'Extérieur + intérieur complet (aspiration, tableau de bord, pneus).', features: ['Tout le forfait Essentiel', 'Aspiration intérieure', 'Nettoyage tableau de bord', 'Dressing des pneus', 'Rafraîchissement odeurs'] },
+  { category: 'package', name: 'Premium', price: 120, icon: 'fa-crown', price_from: 0, bookable: 1, sort_order: 3, description: 'Service complet : extérieur, intérieur, cire, moteur, cuir et tapis — tous types de véhicules.', features: ['Tout le forfait Confort', 'Tous types de véhicules (prix fixe)', 'Cire haute protection', 'Nettoyage moteur', 'Traitement cuir/vinyle', 'Nettoyage des tapis'] },
+
+  // Options de soins esthétiques et extras (sur demande)
+  { category: 'extra', name: 'Nettoyage & Brillance des pneus', price: 15, icon: 'fa-circle-dot', price_from: 0, bookable: 1, sort_order: 1, description: "Dégraissage complet du flanc des pneus, élimination de la poussière de frein et application d'un traitement lustrant longue durée (effet mouillé et protecteur UV)." },
+  { category: 'extra', name: 'Soin & Traitement à la cire des cuirs', price: 45, icon: 'fa-couch', price_from: 0, bookable: 1, sort_order: 2, description: "Nettoyage en profondeur des pores du cuir avec un savon doux spécifique, suivi de l'application d'une cire/crème nourrissante qui redonne de la souplesse et prévient les craquelures." },
+  { category: 'extra', name: 'Protection carrosserie (Cire Express)', price: 30, icon: 'fa-shield-halved', price_from: 0, bookable: 1, sort_order: 3, description: "Application d'une cire de finition hydrophobe à haute brillance après lavage, protégeant la peinture contre les agressions du béton et de la saleté de chantier." },
+  { category: 'extra', name: 'Shampoing des tapis et tissus', price: 60, icon: 'fa-water', price_from: 0, bookable: 1, sort_order: 4, description: 'Extraction par injection/extraction des taches tenaces, boue incrustée et odeurs dans les tapis de sol et sièges en tissu des cabines.' }
+];
+
+const PRICING_COLUMNS = ['category', 'name', 'description', 'price', 'unit', 'icon', 'features', 'price_from', 'bookable', 'active', 'sort_order'];
+
+function pricingSeedValues(row) {
+  return PRICING_COLUMNS.map(col => {
+    if (col === 'features') return row.features ? JSON.stringify(row.features) : null;
+    if (col === 'sort_order') return row.sort_order == null ? 0 : row.sort_order;
+    if (col === 'price_from') return row.price_from || 0;
+    if (col === 'bookable') return row.bookable == null ? 1 : row.bookable;
+    if (col === 'active') return row.active == null ? 1 : row.active;
+    if (col === 'unit') return row.unit || '/ véhicule';
+    return row[col] == null ? null : row[col];
+  });
+}
 
 // ── Seed data ──────────────────────────────────────────────────
 const DEFAULT_SETTINGS = {
@@ -129,31 +183,51 @@ async function seedTurso() {
 }
 
 // ── Migrations (idempotentes, exécutées à chaque démarrage) ────
-// Les bases créées avant l'ajout de la colonne `extras` ont besoin d'un
-// ALTER TABLE : CREATE TABLE IF NOT EXISTS ne modifie pas une table existante.
-async function hasReservationsExtrasColumn() {
+// Les bases créées avant l'ajout d'une colonne ont besoin d'un ALTER TABLE :
+// CREATE TABLE IF NOT EXISTS ne modifie pas une table existante.
+async function tableColumns(table) {
   if (usingTurso()) {
-    const res = await client.execute({ sql: "SELECT name FROM pragma_table_info('reservations')" });
-    return res.rows.some(row => row.name === 'extras');
+    const res = await client.execute({ sql: "SELECT name FROM pragma_table_info('" + table + "')" });
+    return res.rows.map(row => row.name);
   }
-  const res = db.exec("SELECT name FROM pragma_table_info('reservations')");
-  return !!(res.length && res[0].values.some(v => v[0] === 'extras'));
+  const res = db.exec("SELECT name FROM pragma_table_info('" + table + "')");
+  return res.length ? res[0].values.map(v => v[0]) : [];
+}
+
+async function addColumnIfMissing(table, column, type) {
+  try {
+    const cols = await tableColumns(table);
+    if (!cols.length || cols.includes(column)) return;
+    const sql = 'ALTER TABLE ' + table + ' ADD COLUMN ' + column + ' ' + type;
+    if (usingTurso()) await client.execute({ sql });
+    else { db.run(sql); saveDatabase(); }
+    console.log('✅ Migration : colonne ' + table + '.' + column + ' ajoutée');
+  } catch (err) {
+    // Ne jamais empêcher le démarrage de l'application à cause d'une migration
+    console.warn('⚠️  Migration ' + table + '.' + column + ' ignorée :', err.message);
+  }
 }
 
 async function migrate() {
-  try {
-    if (await hasReservationsExtrasColumn()) return;
-    if (usingTurso()) {
-      await client.execute({ sql: 'ALTER TABLE reservations ADD COLUMN extras TEXT' });
-    } else {
-      db.run('ALTER TABLE reservations ADD COLUMN extras TEXT');
-      saveDatabase();
+  await addColumnIfMissing('reservations', 'extras', 'TEXT');
+  await addColumnIfMissing('reservations', 'price_total', 'REAL');
+}
+
+// ── Grille tarifaire (seed unique, éditable ensuite via l'admin) ─
+async function seedPricing() {
+  const insertSql = 'INSERT INTO pricing (' + PRICING_COLUMNS.join(', ') + ') VALUES (' + PRICING_COLUMNS.map(() => '?').join(', ') + ')';
+  if (usingTurso()) {
+    const count = await client.execute({ sql: 'SELECT COUNT(*) as c FROM pricing' });
+    if (Number(count.rows[0].c) > 0) return;
+    for (const row of DEFAULT_PRICING) {
+      await client.execute({ sql: insertSql, args: pricingSeedValues(row) });
     }
-    console.log('✅ Migration : colonne reservations.extras ajoutée');
-  } catch (err) {
-    // Ne jamais empêcher le démarrage de l'application à cause d'une migration
-    console.warn('⚠️  Migration reservations.extras ignorée :', err.message);
+  } else {
+    const res = db.exec('SELECT COUNT(*) as c FROM pricing');
+    if (res.length && res[0].values[0][0] > 0) return;
+    for (const row of DEFAULT_PRICING) db.run(insertSql, pricingSeedValues(row));
   }
+  console.log('✅ Grille tarifaire initialisée (' + DEFAULT_PRICING.length + ' lignes)');
 }
 
 // ── Init ───────────────────────────────────────────────────────
@@ -169,6 +243,7 @@ async function initDatabase() {
       for (const sql of SCHEMA) await client.execute({ sql });
       await migrate();
       await seedTurso();
+      await seedPricing();
       console.log('✅ Turso database ready');
       return client;
     }
@@ -189,6 +264,7 @@ async function initDatabase() {
     for (const sql of SCHEMA) db.run(sql);
     await migrate();
     seedLocal();
+    await seedPricing();
     saveDatabase();
     console.log('✅ Local SQLite database initialized');
     return db;

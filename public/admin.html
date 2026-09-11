@@ -119,6 +119,18 @@
         .empty-state i{font-size:2.5rem;margin-bottom:12px;display:block;opacity:.5}
         .empty-state p{font-size:.9rem}
 
+        /* ── Grille tarifaire ── */
+        .hint-line{font-size:.85rem;color:var(--gray-500);margin-bottom:22px;line-height:1.7}
+        .pricing-section{margin-bottom:34px}
+        .pricing-section h4{font-size:.95rem;color:var(--slate);margin-bottom:12px}
+        .pricing-section table input[type=text],.pricing-section table input[type=number],.pricing-section table textarea{border:2px solid var(--gray-200);border-radius:8px;padding:7px 10px;font-family:'Inter',sans-serif;font-size:.82rem;background:var(--white);color:var(--slate);width:100%}
+        .pricing-section table input:focus,.pricing-section table textarea:focus{border-color:var(--blue);outline:none;box-shadow:0 0 0 3px rgba(14,165,233,.1)}
+        .pricing-section table input[type=checkbox]{width:18px;height:18px;accent-color:var(--blue);cursor:pointer}
+        .add-row{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;background:var(--gray-100);border:1px dashed var(--gray-300);border-radius:12px;padding:14px;margin-top:12px}
+        .add-row label{display:flex;flex-direction:column;gap:5px;font-size:.75rem;font-weight:600;color:var(--gray-500)}
+        .add-row input[type=text],.add-row input[type=number],.add-row textarea{border:2px solid var(--gray-200);border-radius:8px;padding:8px 10px;font-family:'Inter',sans-serif;font-size:.82rem;background:var(--white);color:var(--slate)}
+        .add-row input:focus,.add-row textarea:focus{border-color:var(--blue);outline:none}
+
         @media(max-width:768px){.settings-grid{grid-template-columns:1fr}.stats-grid{grid-template-columns:repeat(2,1fr)}.tabs{gap:2px}.tab{padding:9px 14px;font-size:.8rem}.main-content{padding:18px}.topbar{padding:12px 16px}}
         @media(max-width:480px){.stats-grid{grid-template-columns:1fr}.card-body{padding:16px}}
     </style>
@@ -173,6 +185,7 @@
                 <button class="tab" data-tab="reservations"><i class="fas fa-calendar-check"></i> Réservations</button>
                 <button class="tab" data-tab="contacts"><i class="fas fa-envelope"></i> Contacts</button>
                 <button class="tab" data-tab="reviews"><i class="fas fa-star"></i> Avis</button>
+                <button class="tab" data-tab="pricing"><i class="fas fa-tags"></i> Tarifs</button>
                 <button class="tab" data-tab="settings"><i class="fas fa-gear"></i> Paramètres</button>
             </div>
 
@@ -237,6 +250,20 @@
                         </select>
                     </div>
                     <div class="card-body table-wrap" id="allReviews"></div>
+                </div>
+            </div>
+
+            <!-- Pricing -->
+            <div id="tab-pricing" style="display:none">
+                <div class="card">
+                    <div class="card-header">
+                        <h3><i class="fas fa-tags" style="color:var(--blue)"></i> Grille tarifaire</h3>
+                        <button class="btn btn-sm" style="background:var(--gray-100);color:var(--slate)" id="reloadPricing"><i class="fas fa-rotate"></i> Recharger</button>
+                    </div>
+                    <div class="card-body">
+                        <p class="hint-line"><i class="fas fa-circle-info" style="color:var(--blue)"></i> Modifiez les prix, descriptions, icônes et la visibilité, puis cliquez sur ✔ pour enregistrer la ligne. Les pages publiques (accueil et réservation) se mettent à jour automatiquement. Décocher « Actif » retire l'élément du site sans le supprimer.</p>
+                        <div id="pricingSections"></div>
+                    </div>
                 </div>
             </div>
 
@@ -336,7 +363,7 @@
             document.querySelectorAll('.tab').forEach(function(t){ t.classList.remove('active'); });
             tab.classList.add('active');
             var name = tab.dataset.tab;
-            ['overview','reservations','contacts','reviews','settings'].forEach(function(n) {
+            ['overview','reservations','contacts','reviews','pricing','settings'].forEach(function(n) {
                 var el = document.getElementById('tab-'+n);
                 if(n === name){el.style.display='block';el.style.animation='fadeSlideUp .4s ease'}
                 else{el.style.display='none'}
@@ -344,6 +371,7 @@
             if (name === 'reservations') loadReservations();
             if (name === 'contacts') loadContacts();
             if (name === 'reviews') loadReviews();
+            if (name === 'pricing') loadPricing();
             if (name === 'settings') loadSettings();
         });
     });
@@ -404,7 +432,7 @@
 
     function reservationsTable(list, full) {
         if (!list || !list.length) return '<div class="empty-state"><i class="fas fa-calendar-xmark"></i><p>Aucune réservation</p></div>';
-        var html = '<table><thead><tr><th>#</th><th>Nom</th><th>Service</th>'+(full?'<th>Véhicule</th><th>Extras</th>':'')+'<th>Date</th><th>Heure</th><th>Statut</th><th>Actions</th></tr></thead><tbody>';
+        var html = '<table><thead><tr><th>#</th><th>Nom</th><th>Service</th>'+(full?'<th>Véhicule</th><th>Extras</th>':'')+'<th>Date</th><th>Heure</th><th>Total</th><th>Statut</th><th>Actions</th></tr></thead><tbody>';
         list.forEach(function(r) {
             html += '<tr><td>#'+r.id+'</td><td>'+esc(r.name)+'</td><td>'+esc(r.service)+'</td>';
             if (full) {
@@ -412,6 +440,7 @@
                 html += '<td style="max-width:220px" title="'+esc(r.extras || '—')+'">'+esc(r.extras || '—')+'</td>';
             }
             html += '<td>'+r.reservation_date+'</td><td>'+r.reservation_time+'</td>';
+            html += '<td style="white-space:nowrap;font-weight:700;color:var(--blue)">'+formatTotal(r.price_total)+'</td>';
             html += '<td><span class="badge '+r.status+'">'+(labels[r.status]||r.status)+'</span></td>';
             html += '<td style="white-space:nowrap">';
             if (r.status === 'pending') {
@@ -546,6 +575,152 @@
     });
 
     function esc(s) { var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+    // Échappement pour insertion dans un attribut ou un textarea
+    function escAttr(s) {
+        return String(s == null ? '' : s)
+            .replace(/&/g, '&amp;').replace(/"/g, '&quot;')
+            .replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    function formatTotal(v) {
+        if (v === null || v === undefined || v === '') return '—';
+        var n = Number(v);
+        if (!isFinite(n)) return '—';
+        return (Math.round(n * 100) % 100 === 0 ? String(Math.round(n)) : n.toFixed(2).replace('.', ',')) + ' $';
+    }
+
+    // ══════════════════════════════════════
+    //  GRILLE TARIFAIRE
+    // ══════════════════════════════════════
+    var PRICING_META = {
+        service: { label: 'Services à l\'unité', fields: ['name','price','unit','description','icon','price_from','active','sort_order'] },
+        package: { label: 'Forfaits', fields: ['name','price','unit','description','features','active','sort_order'] },
+        extra:   { label: 'Options & extras (sur demande)', fields: ['name','price','unit','description','icon','active','sort_order'] }
+    };
+    var PRICING_ORDER = ['service', 'package', 'extra'];
+    var PRICING_LABELS = {
+        name: 'Nom', price: 'Prix ($)', unit: 'Unité (ex. / véhicule)', description: 'Description',
+        icon: 'Icône (fa-...)', features: 'Caractéristiques — une par ligne',
+        price_from: 'À partir de', active: 'Actif', sort_order: 'Ordre'
+    };
+    var pricingList = [];
+
+    function pricingById(id) {
+        return pricingList.filter(function(r) { return r.id === id; })[0];
+    }
+
+    function priceField(row, field) {
+        var val = row[field];
+        if (field === 'features') {
+            return '<textarea data-field="features" rows="3">' + escAttr((val || []).join('\n')) + '</textarea>';
+        }
+        if (field === 'active' || field === 'price_from') {
+            return '<input type="checkbox" data-field="' + field + '"' + (val ? ' checked' : '') + '>';
+        }
+        if (field === 'price' || field === 'sort_order') {
+            return '<input type="number" data-field="' + field + '" step="' + (field === 'price' ? '0.01' : '1') + '" value="' + escAttr(val == null ? '' : val) + '">';
+        }
+        if (field === 'description') {
+            return '<textarea data-field="description" rows="3">' + escAttr(val || '') + '</textarea>';
+        }
+        return '<input type="text" data-field="' + field + '" value="' + escAttr(val || '') + '">';
+    }
+
+    function pricingRowsHtml(category, rows) {
+        var fields = PRICING_META[category].fields;
+        var html = '<table><thead><tr>';
+        fields.forEach(function(f) { html += '<th>' + PRICING_LABELS[f] + '</th>'; });
+        html += '<th>Actions</th></tr></thead><tbody>';
+        rows.forEach(function(row) {
+            html += '<tr data-id="' + row.id + '">';
+            fields.forEach(function(f) { html += '<td>' + priceField(row, f) + '</td>'; });
+            html += '<td style="white-space:nowrap">' +
+                '<button class="btn btn-sm btn-success" onclick="savePricing(' + row.id + ', this)"><i class="fas fa-check"></i></button> ' +
+                '<button class="btn btn-sm btn-danger" onclick="delPricing(' + row.id + ')"><i class="fas fa-trash"></i></button>' +
+                '</td></tr>';
+        });
+        html += '</tbody></table>';
+        return html;
+    }
+
+    function pricingAddHtml(category) {
+        var fields = PRICING_META[category].fields.filter(function(f) { return f !== 'sort_order'; });
+        var html = '<div class="add-row" data-category="' + category + '">';
+        fields.forEach(function(f) {
+            var seed = { active: true, price: 0 };
+            html += '<label>' + PRICING_LABELS[f] + priceField(seed, f) + '</label>';
+        });
+        html += '<button class="btn btn-primary btn-sm" onclick="addPricing(\'' + category + '\', this)"><i class="fas fa-plus"></i> Ajouter</button></div>';
+        return html;
+    }
+
+    function collectPricing(box, category, skipSortOrder) {
+        var body = {};
+        PRICING_META[category].fields.forEach(function(f) {
+            if (skipSortOrder && f === 'sort_order') return;
+            var el = box.querySelector('[data-field="' + f + '"]');
+            if (!el) return;
+            if (el.type === 'checkbox') body[f] = el.checked;
+            else if (f === 'features') body[f] = el.value.split('\n').map(function(s) { return s.trim(); }).filter(Boolean);
+            else if (f === 'price' || f === 'sort_order') body[f] = parseFloat(el.value) || 0;
+            else body[f] = el.value;
+        });
+        return body;
+    }
+
+    function loadPricing() {
+        api('GET', '/api/pricing/admin').then(function(rows) {
+            pricingList = Array.isArray(rows) ? rows : [];
+            var html = '';
+            PRICING_ORDER.forEach(function(cat) {
+                var catRows = pricingList.filter(function(r) { return r.category === cat; });
+                html += '<div class="pricing-section" data-category="' + cat + '"><h4>' + PRICING_META[cat].label + ' <span class="badge confirmed">' + catRows.length + '</span></h4>';
+                html += '<div class="table-wrap">' + (catRows.length ? pricingRowsHtml(cat, catRows) : '<div class="empty-state" style="padding:24px"><p>Aucune ligne dans cette catégorie.</p></div>') + '</div>';
+                html += pricingAddHtml(cat);
+                html += '</div>';
+            });
+            document.getElementById('pricingSections').innerHTML = html;
+        });
+    }
+
+    function savePricing(id, btn) {
+        var row = pricingById(id);
+        if (!row) return;
+        var tr = btn.closest('tr');
+        var body = collectPricing(tr, row.category, false);
+        api('PATCH', '/api/pricing/' + id, body).then(function(res) {
+            if (res && res.error) { toast(res.error); return; }
+            toast('Tarif enregistré — le site est à jour.');
+            loadPricing();
+        }).catch(function() { toast('Erreur réseau.'); });
+    }
+
+    function delPricing(id) {
+        var row = pricingById(id);
+        if (!row) return;
+        if (!confirm('Supprimer « ' + row.name + ' » de la grille tarifaire ?')) return;
+        api('DELETE', '/api/pricing/' + id).then(function() {
+            toast('Tarif supprimé.');
+            loadPricing();
+        }).catch(function() { toast('Erreur réseau.'); });
+    }
+
+    function addPricing(category, btn) {
+        var box = btn.closest('.add-row');
+        var body = collectPricing(box, category, true);
+        body.category = category;
+        if (!body.name || body.name.trim().length < 2) { toast('Nom requis (2 caractères minimum).'); return; }
+        if (!(body.price >= 0)) { toast('Prix invalide.'); return; }
+        body.sort_order = 99; // à la fin de la catégorie
+        api('POST', '/api/pricing', body).then(function(res) {
+            if (res && res.error) { toast(res.error); return; }
+            toast('Tarif ajouté !');
+            loadPricing();
+        }).catch(function() { toast('Erreur réseau.'); });
+    }
+
+    document.getElementById('reloadPricing').addEventListener('click', loadPricing);
 
     // ── Check existing token ──
     if (token) {

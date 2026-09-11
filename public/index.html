@@ -359,7 +359,7 @@
     <section class="section services" id="services">
         <div class="container">
             <div class="section-header reveal"><div class="badge"><i class="fas fa-sparkles"></i> Nos Services</div><h2>Un lavage complet pour votre véhicule</h2><p>Des forfaits adaptés à chaque besoin, avec des produits de qualité professionnelle.</p></div>
-            <div class="services-grid">
+            <div class="services-grid" id="servicesGrid">
                 <div class="service-card reveal">
                     <div class="service-img"><img src="https://images.unsplash.com/photo-1633014041037-f5446fb4ce99?w=800&q=85" alt="Lavage extérieur d'une voiture recouverte de mousse" loading="lazy"></div>
                     <div class="service-body">
@@ -467,7 +467,7 @@
     <section class="section pricing" id="tarifs">
         <div class="container">
             <div class="section-header reveal"><div class="badge"><i class="fas fa-tag"></i> Tarifs</div><h2>Nos forfaits populaires</h2><p>Des prix clairs et compétitifs. Le forfait complet est à 120 $ à prix fixe, peu importe le type de véhicule.</p></div>
-            <div class="pricing-grid">
+            <div class="pricing-grid" id="pricingGrid">
                 <div class="pricing-card reveal"><h3>Essentiel</h3><div class="price">35$ <span>/ véhicule</span></div><ul class="pricing-features"><li><i class="fas fa-check"></i> Lavage extérieur complet</li><li><i class="fas fa-check"></i> Jantes & pneus</li><li><i class="fas fa-check"></i> Essuie-glaces</li><li><i class="fas fa-check"></i> Séchage</li></ul><a href="/reservation" class="btn btn-primary btn-block">Choisir ce forfait</a></div>
                 <div class="pricing-card featured reveal"><h3>Confort</h3><div class="price">70$ <span>/ véhicule</span></div><ul class="pricing-features"><li><i class="fas fa-check"></i> Tout le forfait Essentiel</li><li><i class="fas fa-check"></i> Aspiration intérieure</li><li><i class="fas fa-check"></i> Nettoyage tableau de bord</li><li><i class="fas fa-check"></i> Dressing des pneus</li><li><i class="fas fa-check"></i> Rafraîchissement odeurs</li></ul><a href="/reservation" class="btn btn-primary btn-block">Choisir ce forfait</a></div>
                 <div class="pricing-card reveal"><h3>Premium</h3><div class="price">120$ <span>/ véhicule</span></div><ul class="pricing-features"><li><i class="fas fa-check"></i> Tout le forfait Confort</li><li><i class="fas fa-check"></i> Tous types de véhicules (prix fixe)</li><li><i class="fas fa-check"></i> Cire haute protection</li><li><i class="fas fa-check"></i> Nettoyage moteur</li><li><i class="fas fa-check"></i> Traitement cuir/vinyle</li><li><i class="fas fa-check"></i> Nettoyage des tapis</li></ul><a href="/reservation" class="btn btn-primary btn-block">Choisir ce forfait</a></div>
@@ -478,7 +478,7 @@
     <section class="section extras" id="extras">
         <div class="container">
             <div class="section-header reveal"><div class="badge"><i class="fas fa-wand-magic-sparkles"></i> Options &amp; Extras</div><h2>Options de soins esthétiques et Extras</h2><p>Services additionnels disponibles <strong>sur demande</strong>, en complément de votre forfait.</p></div>
-            <div class="extras-grid">
+            <div class="extras-grid" id="extrasGrid">
                 <div class="extra-card reveal">
                     <div class="extra-icon"><i class="fas fa-circle-dot"></i></div>
                     <h3>Nettoyage &amp; Brillance des pneus</h3>
@@ -594,6 +594,92 @@
             <div class="footer-bottom"><p>© <span id="currentYear">2026</span> CNH Service. Tous droits réservés.</p><p><a href="#">Politique de confidentialité</a> • <a href="#">Conditions d'utilisation</a></p></div>
         </div>
     </footer>
+
+    <script>
+    // ── Grille tarifaire pilotée par l'admin (onglet Tarifs) ──
+    // Le HTML statique ci-dessus sert de contenu par défaut (SEO + repli hors ligne) ;
+    // si /api/pricing répond, les cartes sont mises à jour dans l'ordre de la grille.
+    (function() {
+        function esc(s) { var d = document.createElement('div'); d.textContent = s == null ? '' : String(s); return d.innerHTML; }
+        function money(v) {
+            var n = Number(v);
+            if (!isFinite(n)) n = 0;
+            return (Math.round(n * 100) % 100 === 0 ? String(Math.round(n)) : n.toFixed(2).replace('.', ',')) + ' $';
+        }
+        function unitSpan(unit) {
+            return unit ? ' <span style="font-size:.9rem;font-weight:500;color:var(--gray-400)">' + esc(unit) + '</span>' : '';
+        }
+        function priceText(row) {
+            return (row.price_from ? 'À partir de ' : '') + money(row.price) + unitSpan(row.unit);
+        }
+
+        // ── Services ──
+        function updateServiceCard(card, row) {
+            var h3 = card.querySelector('h3'); if (h3) h3.textContent = row.name;
+            var p = card.querySelector('.service-body p'); if (p) p.textContent = row.description || '';
+            var price = card.querySelector('.price'); if (price) price.innerHTML = priceText(row);
+            var icon = card.querySelector('.service-icon i'); if (icon && row.icon) icon.className = 'fas ' + row.icon;
+        }
+        function serviceCardHtml(row) {
+            return '<div class="service-card reveal visible"><div class="service-body">' +
+                '<div class="service-icon blue"><i class="fas ' + esc(row.icon || 'fa-spray-can-sparkles') + '"></i></div>' +
+                '<h3>' + esc(row.name) + '</h3><p>' + esc(row.description || '') + '</p>' +
+                '<div class="price">' + priceText(row) + '</div>' +
+                '<a href="/reservation" class="btn btn-primary">Réserver</a></div></div>';
+        }
+
+        // ── Forfaits ──
+        function updatePricingCard(card, row) {
+            var h3 = card.querySelector('h3'); if (h3) h3.textContent = row.name;
+            var price = card.querySelector('.price'); if (price) price.innerHTML = money(row.price) + unitSpan(row.unit);
+            var ul = card.querySelector('.pricing-features');
+            if (ul) ul.innerHTML = (row.features || []).map(function(f) { return '<li><i class="fas fa-check"></i> ' + esc(f) + '</li>'; }).join('');
+        }
+        function pricingCardHtml(row) {
+            return '<div class="pricing-card reveal visible"><h3>' + esc(row.name) + '</h3>' +
+                '<div class="price">' + money(row.price) + unitSpan(row.unit) + '</div>' +
+                '<ul class="pricing-features">' + (row.features || []).map(function(f) { return '<li><i class="fas fa-check"></i> ' + esc(f) + '</li>'; }).join('') + '</ul>' +
+                '<a href="/reservation" class="btn btn-primary btn-block">Choisir ce forfait</a></div>';
+        }
+
+        // ── Extras ──
+        function updateExtraCard(card, row) {
+            var h3 = card.querySelector('h3'); if (h3) h3.textContent = row.name;
+            var p = card.querySelector('p'); if (p) p.textContent = row.description || '';
+            var price = card.querySelector('.extra-price'); if (price) price.innerHTML = money(row.price) + unitSpan(row.unit);
+            var icon = card.querySelector('.extra-icon i'); if (icon && row.icon) icon.className = 'fas ' + row.icon;
+        }
+        function extraCardHtml(row) {
+            return '<div class="extra-card reveal visible"><div class="extra-icon"><i class="fas ' + esc(row.icon || 'fa-star') + '"></i></div>' +
+                '<h3>' + esc(row.name) + '</h3><p>' + esc(row.description || '') + '</p>' +
+                '<div class="extra-price">' + money(row.price) + unitSpan(row.unit) + '</div></div>';
+        }
+
+        function syncGrid(grid, rows, update, create) {
+            if (!grid) return;
+            var cards = Array.prototype.slice.call(grid.children);
+            rows.forEach(function(row, i) {
+                if (i < cards.length) update(cards[i], row);
+                else grid.insertAdjacentHTML('beforeend', create(row));
+            });
+            for (var j = rows.length; j < cards.length; j++) grid.removeChild(cards[j]);
+        }
+
+        var byCategory = function(rows, category) {
+            return rows.filter(function(r) { return r.category === category; });
+        };
+
+        fetch('/api/pricing')
+            .then(function(r) { return r.json(); })
+            .then(function(rows) {
+                if (!Array.isArray(rows) || !rows.length) return; // grille vide : on garde le HTML statique
+                syncGrid(document.getElementById('servicesGrid'), byCategory(rows, 'service'), updateServiceCard, serviceCardHtml);
+                syncGrid(document.getElementById('pricingGrid'), byCategory(rows, 'package'), updatePricingCard, pricingCardHtml);
+                syncGrid(document.getElementById('extrasGrid'), byCategory(rows, 'extra'), updateExtraCard, extraCardHtml);
+            })
+            .catch(function() { /* API indisponible : le HTML statique reste affiché */ });
+    })();
+    </script>
 
     <a href="https://wa.me/14502302509?text=Bonjour%20CNH%20Service%2C%20je%20souhaite%20un%20devis%20pour%20un%20lavage%20auto." target="_blank" rel="noopener" class="whatsapp-float" aria-label="WhatsApp"><i class="fab fa-whatsapp"></i></a>
     <a href="#accueil" class="back-to-top" id="backToTop" aria-label="Retour en haut"><i class="fas fa-chevron-up"></i></a>

@@ -293,23 +293,60 @@
 
     <script>
     var API = '';
-    var services = [
-        { name: 'Lavage Extérieur', price: 35, icon: 'fa-spray-can-sparkles', desc: 'Carrosserie, jantes, pneus, vitres' },
-        { name: 'Lavage Intérieur', price: 45, icon: 'fa-couch', desc: 'Aspiration, tableau de bord, sièges' },
-        { name: 'Detailing Complet', price: 85, icon: 'fa-wand-magic-sparkles', desc: 'Extérieur + intérieur + cire' },
-        { name: 'Nettoyage Moteur', price: 55, icon: 'fa-gears', desc: 'Dégraissant professionnel' },
-        { name: 'Protection Cire', price: 65, icon: 'fa-shield-halved', desc: 'Cire haute protection' },
-        { name: 'Forfait Confort', price: 70, icon: 'fa-star', desc: 'Extérieur + intérieur standard' },
-        { name: 'Forfait Premium', price: 120, icon: 'fa-crown', desc: 'Service complet — 120 $ fixe, tous types de véhicules' }
+
+    // Repli si /api/pricing est indisponible — la grille réelle est gérée dans l'admin (onglet Tarifs)
+    var FALLBACK_PRICING = [
+        { category: 'service', name: 'Lavage Extérieur', price: 35, icon: 'fa-spray-can-sparkles', description: 'Lavage complet de la carrosserie, des jantes, des pneus et des vitres avec produits biologiques.', bookable: true },
+        { category: 'service', name: 'Lavage Intérieur', price: 45, icon: 'fa-couch', description: 'Aspiration, nettoyage du tableau de bord, des sièges, des portes et traitement des odeurs.', bookable: true },
+        { category: 'service', name: 'Detailing Complet', price: 85, icon: 'fa-wand-magic-sparkles', description: 'Lavage extérieur et intérieur complet + cire, dressing des pneus et finition premium.', bookable: true },
+        { category: 'service', name: 'Nettoyage Moteur', price: 55, icon: 'fa-gears', description: 'Nettoyage en profondeur du compartiment moteur avec dégraissant professionnel.', bookable: true },
+        { category: 'service', name: 'Protection Cire', price: 65, icon: 'fa-shield-halved', description: 'Application de cire haute protection pour garder votre voiture brillante plus longtemps.', bookable: true },
+        { category: 'package', name: 'Essentiel', price: 35, icon: 'fa-star', description: 'Lavage extérieur complet, jantes, pneus et séchage.' },
+        { category: 'package', name: 'Confort', price: 70, icon: 'fa-star', description: 'Extérieur + intérieur complet (aspiration, tableau de bord, pneus).' },
+        { category: 'package', name: 'Premium', price: 120, icon: 'fa-crown', description: 'Service complet : extérieur, intérieur, cire, moteur, cuir et tapis — tous types de véhicules.' },
+        { category: 'extra', name: 'Nettoyage & Brillance des pneus', price: 15, description: "Dégraissage complet du flanc des pneus, élimination de la poussière de frein et application d'un traitement lustrant longue durée (effet mouillé et protecteur UV).", bookable: true },
+        { category: 'extra', name: 'Soin & Traitement à la cire des cuirs', price: 45, description: "Nettoyage en profondeur des pores du cuir avec un savon doux spécifique, suivi de l'application d'une cire/crème nourrissante qui redonne de la souplesse et prévient les craquelures.", bookable: true },
+        { category: 'extra', name: 'Protection carrosserie (Cire Express)', price: 30, description: "Application d'une cire de finition hydrophobe à haute brillance après lavage, protégeant la peinture contre les agressions du béton et de la saleté de chantier.", bookable: true },
+        { category: 'extra', name: 'Shampoing des tapis et tissus', price: 60, description: 'Extraction par injection/extraction des taches tenaces, boue incrustée et odeurs dans les tapis de sol et sièges en tissu des cabines.', bookable: true }
     ];
 
-    // Options de soins esthétiques et extras (sur demande) — s'ajoutent au forfait choisi
-    var extras = [
-        { name: 'Nettoyage & Brillance des pneus', price: 15, desc: 'Dégraissage du flanc des pneus, poussière de frein et traitement lustrant longue durée (effet mouillé, protection UV).' },
-        { name: 'Soin & Traitement à la cire des cuirs', price: 45, desc: 'Nettoyage en profondeur des pores du cuir au savon doux, puis cire/crème nourrissante anti-craquelures.' },
-        { name: 'Protection carrosserie (Cire Express)', price: 30, desc: 'Cire de finition hydrophobe haute brillance appliquée après le lavage.' },
-        { name: 'Shampoing des tapis et tissus', price: 60, desc: 'Injection/extraction des taches tenaces, boue incrustée et odeurs (tapis de sol et sièges en tissu).' }
-    ];
+    var services = [];  // services à l'unité + forfaits réservables (remplis par buildCatalog)
+    var extras = [];    // options de soins esthétiques (remplies par buildCatalog)
+
+    // Répartit les lignes de la grille tarifaire entre services réservables et extras
+    function buildCatalog(rows) {
+        var bookable = [], options = [];
+        (rows || []).forEach(function(r) {
+            if (!r || r.active === false) return;
+            if (r.category === 'service') {
+                if (r.bookable === false) return; // ligne d'information (ex. « tous types de véhicules »)
+                bookable.push({ name: r.name, price: r.price, icon: r.icon || 'fa-spray-can-sparkles', desc: r.description || '' });
+            } else if (r.category === 'package') {
+                if (r.bookable === false) return;
+                bookable.push({ name: r.name, price: r.price, icon: r.icon || 'fa-star', desc: r.description || '' });
+            } else if (r.category === 'extra') {
+                options.push({ name: r.name, price: r.price, desc: r.description || '', icon: r.icon || 'fa-star' });
+            }
+        });
+        services = bookable;
+        extras = options;
+        // La sélection en cours survit à un rafraîchissement de la grille
+        if (selected.service) {
+            var found = services.filter(function(s) { return s.name === selected.service; })[0];
+            if (found) selected.price = found.price;
+        }
+        selected.extras = selected.extras.filter(function(name) {
+            return extras.some(function(x) { return x.name === name; });
+        });
+    }
+
+    function loadPricing() {
+        return fetch(API + '/api/pricing')
+            .then(function(r) { return r.json(); })
+            .then(function(rows) { buildCatalog(Array.isArray(rows) && rows.length ? rows : FALLBACK_PRICING); })
+            .catch(function() { buildCatalog(FALLBACK_PRICING); })
+            .then(function() { renderServices(); renderExtras(); updateSummary(); });
+    }
 
     var selected = { service: null, price: null, date: null, time: null, extras: [] };
     var calDate = new Date();
@@ -544,10 +581,12 @@
         renderExtras();
     }
 
-    // ── Init ──
+    // ── Init ── rendu immédiat avec le repli, puis rafraîchissement depuis la grille tarifaire
+    buildCatalog(FALLBACK_PRICING);
     renderServices();
     renderExtras();
     renderCalendar();
+    loadPricing();
     </script>
 </body>
 </html>

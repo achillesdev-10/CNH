@@ -58,6 +58,20 @@ npm start
 > Turso (définissez `TURSO_DATABASE_URL` et `TURSO_AUTH_TOKEN`), et invalide les
 > sessions existantes de l'utilisateur après le changement.
 
+## 💰 Tarifs
+
+Tous les montants affichés sur le site (services à l'unité, forfaits, options et
+extras) vivent dans la table `pricing` et se modifient depuis l'admin, onglet
+**Tarifs** : prix, description, icône, ordre d'affichage et visibilité (`Actif`),
+sans toucher au code. L'accueil et la page de réservation rechargent la grille
+via `/api/pricing` (le HTML statique de l'accueil sert de repli si l'API est
+indisponible).
+
+Le total estimé d'une réservation (service/forfait + extras cochés) est calculé
+**côté serveur** au moment de la réservation, à partir de la grille, puis figé
+dans `reservations.price_total` — l'historique reste donc juste même si les prix
+changent ensuite.
+
 ## 📡 API Endpoints
 
 ### Auth
@@ -92,6 +106,15 @@ npm start
 | GET | `/api/settings` | Paramètres publics |
 | PUT | `/api/settings` | Modifier les paramètres (admin) |
 
+### Tarifs (grille tarifaire)
+| Méthode | Route | Description |
+|---------|-------|-------------|
+| GET | `/api/pricing` | Grille publique (lignes actives uniquement) |
+| GET | `/api/pricing/admin` | Toutes les lignes, y compris désactivées (admin) |
+| POST | `/api/pricing` | Ajouter un tarif (admin) |
+| PATCH | `/api/pricing/:id` | Modifier un tarif (admin) |
+| DELETE | `/api/pricing/:id` | Supprimer un tarif (admin) |
+
 ### Témoignages
 | Méthode | Route | Description |
 |---------|-------|-------------|
@@ -114,6 +137,7 @@ Tables :
 - `reservations` — Réservations en ligne (colonne `extras` : options de soins esthétiques et extras choisis)
 - `settings` — Paramètres du site
 - `stats` — Statistiques de visite
+- `pricing` — Grille tarifaire : services à l'unité, forfaits et options/extras (éditable depuis l'admin)
 - `testimonials` — Témoignages clients (modérés)
 - `sessions` — Tokens de session admin (persistants)
 

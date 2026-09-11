@@ -154,12 +154,16 @@ app.post('/api/reservations', asyncHandler(async (req, res) => {
   if (!isValidEmail(email)) return res.status(400).json({ error: 'Email invalide' });
   if (!/^\d{4}-\d{2}-\d{2}$/.test(String(date))) return res.status(400).json({ error: 'Date invalide' });
   if (!TIME_SLOTS.includes(time)) return res.status(400).json({ error: 'Heure invalide' });
-  const cleanExtras = extras == null || extras === '' ? null : String(extras).trim().slice(0, 500);
+  const extraNames = Array.isArray(extras)
+    ? extras.map(e => String(e).trim()).filter(Boolean)
+    : (typeof extras === 'string' && extras.trim() ? extras.split(',').map(e => e.trim()).filter(Boolean) : []);
+  const cleanExtras = extraNames.length ? extraNames.join(', ').slice(0, 500) : null;
+  const priceTotal = await computeReservationTotal(service, extraNames);
   const existing = await queryOne("SELECT id FROM reservations WHERE reservation_date = ? AND reservation_time = ? AND status IN ('pending','confirmed')", [date, time]);
   if (existing) return res.status(409).json({ error: 'Ce créneau est déjà réservé.' });
   try {
-    const id = await runSql('INSERT INTO reservations (name, email, phone, vehicle_type, vehicle_plate, service, address, city, postal_code, reservation_date, reservation_time, notes, extras) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-      [name, email, phone, vehicle_type, vehicle_plate || null, service, address, city, postal_code || null, date, time, notes || null, cleanExtras]);
+    const id = await runSql('INSERT INTO reservations (name, email, phone, vehicle_type, vehicle_plate, service, address, city, postal_code, reservation_date, reservation_time, notes, extras, price_total) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [name, email, phone, vehicle_type, vehicle_plate || null, service, address, city, postal_code || null, date, time, notes || null, cleanExtras, priceTotal]);
     await runSql("INSERT INTO stats (type, value) VALUES ('reservation', 1)");
     res.json({ success: true, id });
   } catch (err) {
@@ -272,6 +276,127 @@ app.put('/api/settings', authMiddleware, asyncHandler(async (req, res) => {
   }
   res.json({ success: true });
 }));
+
+// ══════════════════════════════════════
+//  GRILLE TARIFAIRE (PRICING)
+// ══════════════════════════════════════
+
+const PRICING_CATEGORIES = ['service', 'package', 'extra'];
+
+// Accepte un tableau ou du texte (une caractéristique par ligne)
+function parseFeatures(value) {
+  let list = [];
+  if (Array.isArray(value)) list = value;
+  else if (typeof value === 'string') list = value.split(/\r?\n/);
+  return list.map(f => String(f).trim()).filter(Boolean).slice(0, 12).map(f => f.slice(0, 160));
+}
+
+function serializePricing(row) {
+  let features = [];
+  if (row.features) {
+    try { features = parseFeatures(JSON.parse(row.features)); } catch (err) { features = []; }
+  }
+  return {
+    id: row.id,
+    category: row.category,
+    name: row.name,
+    description: row.description || '',
+    price: Number(row.price) || 0,
+    unit: row.unit || '',
+    icon: row.icon || '',
+    features,
+    price_from: !!row.price_from,
+    bookable: !!row.bookable,
+    active: !!row.active,
+    sort_order: Number(row.sort_order) || 0
+  };
+}
+
+// Valide un tarif. `partial` = true pour un PATCH (seuls les champs envoyés sont traités)
+function readPricingPayload(body, partial) {
+  const out = {};
+  if (!partial || 'category' in body) {
+    const category = String(body.category || '');
+    if (!PRICING_CATEGORIES.includes(category)) return { error: 'Catégorie invalide' };
+    out.category = category;
+  }
+  if (!partial || 'name' in body) {
+    const name = String(body.name || '').trim();
+    if (name.length < 2 || name.length > 80) return { error: 'Nom requis (2 à 80 caractères)' };
+    out.name = name;
+  }
+  if (!partial || 'price' in body) {
+    const price = Number(body.price);
+    if (!Number.isFinite(price) || price < 0 || price > 100000) return { error: 'Prix invalide' };
+    out.price = Math.round(price * 100) / 100;
+  }
+  if (body.description !== undefined) out.description = String(body.description).trim().slice(0, 600);
+  if (body.unit !== undefined) out.unit = String(body.unit).trim().slice(0, 20);
+  if (body.icon !== undefined) {
+    const icon = String(body.icon).trim();
+    out.icon = /^fa-[a-z0-9-]{1,40}$/.test(icon) ? icon : '';
+  }
+  if (body.features !== undefined) out.features = JSON.stringify(parseFeatures(body.features));
+  if (body.price_from !== undefined) out.price_from = body.price_from ? 1 : 0;
+  if (body.bookable !== undefined) out.bookable = body.bookable ? 1 : 0;
+  if (body.active !== undefined) out.active = body.active ? 1 : 0;
+  if (body.sort_order !== undefined) out.sort_order = cleanInt(body.sort_order, 0, -999, 999);
+  return { data: out };
+}
+
+// Grille utilisée par les pages publiques (lignes actives uniquement)
+app.get('/api/pricing', asyncHandler(async (req, res) => {
+  const rows = await queryAll('SELECT * FROM pricing WHERE active = 1 ORDER BY category ASC, sort_order ASC, id ASC');
+  res.json(rows.map(serializePricing));
+}));
+
+// Admin : toutes les lignes, y compris désactivées
+app.get('/api/pricing/admin', authMiddleware, asyncHandler(async (req, res) => {
+  const rows = await queryAll('SELECT * FROM pricing ORDER BY category ASC, sort_order ASC, id ASC');
+  res.json(rows.map(serializePricing));
+}));
+
+app.post('/api/pricing', authMiddleware, asyncHandler(async (req, res) => {
+  const { data, error } = readPricingPayload(req.body || {}, false);
+  if (error) return res.status(400).json({ error });
+  const cols = Object.keys(data);
+  const id = await runSql('INSERT INTO pricing (' + cols.join(', ') + ') VALUES (' + cols.map(() => '?').join(', ') + ')',
+    cols.map(c => data[c]));
+  res.json({ success: true, id });
+}));
+
+app.patch('/api/pricing/:id', authMiddleware, asyncHandler(async (req, res) => {
+  const id = parseInt(req.params.id, 10);
+  if (!Number.isInteger(id)) return res.status(400).json({ error: 'Identifiant invalide' });
+  if (!await queryOne('SELECT id FROM pricing WHERE id = ?', [id])) return res.status(404).json({ error: 'Tarif introuvable' });
+  const { data, error } = readPricingPayload(req.body || {}, true);
+  if (error) return res.status(400).json({ error });
+  const cols = Object.keys(data);
+  if (!cols.length) return res.status(400).json({ error: 'Aucune modification' });
+  await runSql('UPDATE pricing SET ' + cols.map(c => c + ' = ?').join(', ') + ", updated_at = datetime('now') WHERE id = ?",
+    cols.map(c => data[c]).concat([id]));
+  res.json({ success: true });
+}));
+
+app.delete('/api/pricing/:id', authMiddleware, asyncHandler(async (req, res) => {
+  const id = parseInt(req.params.id, 10);
+  if (!Number.isInteger(id)) return res.status(400).json({ error: 'Identifiant invalide' });
+  await runSql('DELETE FROM pricing WHERE id = ?', [id]);
+  res.json({ success: true });
+}));
+
+// Total estimé d'une réservation, calculé côté serveur depuis la grille tarifaire
+// (jamais depuis le client) et figé au moment de la réservation.
+async function computeReservationTotal(serviceName, extraNames) {
+  const rows = await queryAll('SELECT name, price FROM pricing WHERE active = 1');
+  const prices = new Map(rows.map(r => [r.name, Number(r.price) || 0]));
+  if (!prices.has(serviceName)) return null;
+  let total = prices.get(serviceName);
+  for (const name of extraNames) {
+    if (prices.has(name)) total += prices.get(name);
+  }
+  return Math.round(total * 100) / 100;
+}
 
 // ══════════════════════════════════════
 //  TESTIMONIALS
