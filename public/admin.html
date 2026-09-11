@@ -627,9 +627,10 @@
     var PRICING_META = {
         service: { label: 'Services à l\'unité', fields: ['name','price','unit','description','icon','price_from','active','sort_order'] },
         package: { label: 'Forfaits', fields: ['name','price','unit','description','features','active','sort_order'] },
+        vehicle: { label: 'Types de véhicule (supplément ajouté au total)', fields: ['name','price','active','sort_order'] },
         extra:   { label: 'Options & extras (sur demande)', fields: ['name','price','unit','description','icon','active','sort_order'] }
     };
-    var PRICING_ORDER = ['service', 'package', 'extra'];
+    var PRICING_ORDER = ['service', 'package', 'vehicle', 'extra'];
     var PRICING_LABELS = {
         name: 'Nom', price: 'Prix ($)', unit: 'Unité (ex. / véhicule)', description: 'Description',
         icon: 'Icône (fa-...)', features: 'Caractéristiques — une par ligne',

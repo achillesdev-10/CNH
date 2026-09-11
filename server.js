@@ -158,12 +158,12 @@ app.post('/api/reservations', asyncHandler(async (req, res) => {
     ? extras.map(e => String(e).trim()).filter(Boolean)
     : (typeof extras === 'string' && extras.trim() ? extras.split(',').map(e => e.trim()).filter(Boolean) : []);
   const cleanExtras = extraNames.length ? extraNames.join(', ').slice(0, 500) : null;
-  const priceTotal = await computeReservationTotal(service, extraNames);
+  const { total: priceTotal, surcharge: vehicleSurcharge } = await computeReservationPricing(service, extraNames, vehicle_type);
   const existing = await queryOne("SELECT id FROM reservations WHERE reservation_date = ? AND reservation_time = ? AND status IN ('pending','confirmed')", [date, time]);
   if (existing) return res.status(409).json({ error: 'Ce créneau est déjà réservé.' });
   try {
-    const id = await runSql('INSERT INTO reservations (name, email, phone, vehicle_type, vehicle_plate, service, address, city, postal_code, reservation_date, reservation_time, notes, extras, price_total) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-      [name, email, phone, vehicle_type, vehicle_plate || null, service, address, city, postal_code || null, date, time, notes || null, cleanExtras, priceTotal]);
+    const id = await runSql('INSERT INTO reservations (name, email, phone, vehicle_type, vehicle_plate, service, address, city, postal_code, reservation_date, reservation_time, notes, extras, price_total, vehicle_surcharge) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [name, email, phone, vehicle_type, vehicle_plate || null, service, address, city, postal_code || null, date, time, notes || null, cleanExtras, priceTotal, vehicleSurcharge]);
     await runSql("INSERT INTO stats (type, value) VALUES ('reservation', 1)");
     res.json({ success: true, id });
   } catch (err) {
@@ -208,13 +208,13 @@ app.get('/api/reservations/export.csv', authMiddleware, asyncHandler(async (req,
   if (status) { where = ' WHERE status = ?'; params.push(status); }
   const rows = await queryAll('SELECT * FROM reservations' + where + ' ORDER BY reservation_date ASC, reservation_time ASC', params);
 
-  const header = ['#', 'Nom', 'Email', 'Téléphone', 'Type de véhicule', 'Plaque', 'Service', 'Extras', 'Total ($)', 'Date', 'Heure', 'Adresse', 'Ville', 'Code postal', 'Notes', 'Statut', 'Créée le'];
+  const header = ['#', 'Nom', 'Email', 'Téléphone', 'Type de véhicule', 'Plaque', 'Service', 'Extras', 'Supplément véhicule ($)', 'Total ($)', 'Date', 'Heure', 'Adresse', 'Ville', 'Code postal', 'Notes', 'Statut', 'Créée le'];
   const lines = [header.map(csvCell).join(';')];
   for (const r of rows) {
     lines.push([
       r.id, r.name, r.email, r.phone, r.vehicle_type, r.vehicle_plate, r.service, r.extras,
-      csvTotal(r.price_total), r.reservation_date, r.reservation_time, r.address, r.city,
-      r.postal_code, r.notes, RESERVATION_STATUS_LABELS[r.status] || r.status, r.created_at
+      csvTotal(r.vehicle_surcharge), csvTotal(r.price_total), r.reservation_date, r.reservation_time,
+      r.address, r.city, r.postal_code, r.notes, RESERVATION_STATUS_LABELS[r.status] || r.status, r.created_at
     ].map(csvCell).join(';'));
   }
 
@@ -321,7 +321,7 @@ app.put('/api/settings', authMiddleware, asyncHandler(async (req, res) => {
 //  GRILLE TARIFAIRE (PRICING)
 // ══════════════════════════════════════
 
-const PRICING_CATEGORIES = ['service', 'package', 'extra'];
+const PRICING_CATEGORIES = ['service', 'package', 'vehicle', 'extra'];
 
 // Accepte un tableau ou du texte (une caractéristique par ligne)
 function parseFeatures(value) {
@@ -427,15 +427,21 @@ app.delete('/api/pricing/:id', authMiddleware, asyncHandler(async (req, res) => 
 
 // Total estimé d'une réservation, calculé côté serveur depuis la grille tarifaire
 // (jamais depuis le client) et figé au moment de la réservation.
-async function computeReservationTotal(serviceName, extraNames) {
-  const rows = await queryAll('SELECT name, price FROM pricing WHERE active = 1');
-  const prices = new Map(rows.map(r => [r.name, Number(r.price) || 0]));
-  if (!prices.has(serviceName)) return null;
+// La grille ne contient qu'un prix : un type de véhicule sans supplément reste à 0 $,
+// donc « tout type de véhicules = même prix » (voir DEFAULT_PRICING).
+async function computeReservationPricing(serviceName, extraNames, vehicleType) {
+  const rows = await queryAll('SELECT category, name, price FROM pricing WHERE active = 1');
+  const prices = new Map(rows.filter(r => r.category !== 'vehicle').map(r => [r.name, Number(r.price) || 0]));
+  const vehicles = new Map(rows.filter(r => r.category === 'vehicle').map(r => [r.name, Number(r.price) || 0]));
+  const surcharge = vehicles.get(vehicleType) || 0;
+  // Service retiré de la grille : on ne devine pas de prix, on laisse le total vide.
+  if (!prices.has(serviceName)) return { total: null, surcharge };
   let total = prices.get(serviceName);
   for (const name of extraNames) {
     if (prices.has(name)) total += prices.get(name);
   }
-  return Math.round(total * 100) / 100;
+  total += surcharge;
+  return { total: Math.round(total * 100) / 100, surcharge };
 }
 
 // ══════════════════════════════════════

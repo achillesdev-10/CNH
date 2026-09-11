@@ -251,6 +251,7 @@
                     <h3><i class="fas fa-receipt"></i> Résumé de votre réservation</h3>
                     <div class="summary-row"><span>Service</span><strong id="sumService">—</strong></div>
                     <div class="summary-row"><span>Prix</span><strong id="sumPrice" style="color:var(--blue)">—</strong></div>
+                    <div class="summary-row"><span>Type de véhicule</span><strong id="sumVehicle">—</strong></div>
                     <div class="summary-row"><span>Options &amp; extras</span><strong id="sumExtras">Aucune</strong></div>
                     <div class="summary-row"><span>Date</span><strong id="sumDate">—</strong></div>
                     <div class="summary-row"><span>Heure</span><strong id="sumTime">—</strong></div>
@@ -276,6 +277,7 @@
                     <h3><i class="fas fa-receipt"></i> Détails</h3>
                     <div class="summary-row"><span>Réservation #</span><strong id="sumId">—</strong></div>
                     <div class="summary-row"><span>Service</span><strong id="sumService2">—</strong></div>
+                    <div class="summary-row"><span>Type de véhicule</span><strong id="sumVehicle2">—</strong></div>
                     <div class="summary-row"><span>Options &amp; extras</span><strong id="sumExtras2">Aucune</strong></div>
                     <div class="summary-row"><span>Date</span><strong id="sumDate2">—</strong></div>
                     <div class="summary-row"><span>Heure</span><strong id="sumTime2">—</strong></div>
@@ -307,15 +309,23 @@
         { category: 'extra', name: 'Nettoyage & Brillance des pneus', price: 15, description: "Dégraissage complet du flanc des pneus, élimination de la poussière de frein et application d'un traitement lustrant longue durée (effet mouillé et protecteur UV).", bookable: true },
         { category: 'extra', name: 'Soin & Traitement à la cire des cuirs', price: 45, description: "Nettoyage en profondeur des pores du cuir avec un savon doux spécifique, suivi de l'application d'une cire/crème nourrissante qui redonne de la souplesse et prévient les craquelures.", bookable: true },
         { category: 'extra', name: 'Protection carrosserie (Cire Express)', price: 30, description: "Application d'une cire de finition hydrophobe à haute brillance après lavage, protégeant la peinture contre les agressions du béton et de la saleté de chantier.", bookable: true },
-        { category: 'extra', name: 'Shampoing des tapis et tissus', price: 60, description: 'Extraction par injection/extraction des taches tenaces, boue incrustée et odeurs dans les tapis de sol et sièges en tissu des cabines.', bookable: true }
+        { category: 'extra', name: 'Shampoing des tapis et tissus', price: 60, description: 'Extraction par injection/extraction des taches tenaces, boue incrustée et odeurs dans les tapis de sol et sièges en tissu des cabines.', bookable: true },
+        // Types de véhicule : supplément à 0 $ = même prix pour tous les types (comme la grille)
+        { category: 'vehicle', name: 'Berline', price: 0 },
+        { category: 'vehicle', name: 'SUV', price: 0 },
+        { category: 'vehicle', name: 'Minivan', price: 0 },
+        { category: 'vehicle', name: 'Camion / Pick-up', price: 0 },
+        { category: 'vehicle', name: 'Coupé / Roadster', price: 0 },
+        { category: 'vehicle', name: 'Autre', price: 0 }
     ];
 
     var services = [];  // services à l'unité + forfaits réservables (remplis par buildCatalog)
     var extras = [];    // options de soins esthétiques (remplies par buildCatalog)
+    var vehicles = [];  // types de véhicule et leur supplément (remplis par buildCatalog)
 
     // Répartit les lignes de la grille tarifaire entre services réservables et extras
     function buildCatalog(rows) {
-        var bookable = [], options = [];
+        var bookable = [], options = [], types = [];
         (rows || []).forEach(function(r) {
             if (!r || r.active === false) return;
             if (r.category === 'service') {
@@ -326,10 +336,13 @@
                 bookable.push({ name: r.name, price: r.price, icon: r.icon || 'fa-star', desc: r.description || '' });
             } else if (r.category === 'extra') {
                 options.push({ name: r.name, price: r.price, desc: r.description || '', icon: r.icon || 'fa-star' });
+            } else if (r.category === 'vehicle') {
+                types.push({ name: r.name, price: Number(r.price) || 0 });
             }
         });
         services = bookable;
         extras = options;
+        if (types.length) vehicles = types;
         // La sélection en cours survit à un rafraîchissement de la grille
         if (selected.service) {
             var found = services.filter(function(s) { return s.name === selected.service; })[0];
@@ -345,7 +358,7 @@
             .then(function(r) { return r.json(); })
             .then(function(rows) { buildCatalog(Array.isArray(rows) && rows.length ? rows : FALLBACK_PRICING); })
             .catch(function() { buildCatalog(FALLBACK_PRICING); })
-            .then(function() { renderServices(); renderExtras(); updateSummary(); });
+            .then(function() { renderServices(); renderExtras(); renderVehicles(); updateSummary(); });
     }
 
     var selected = { service: null, price: null, date: null, time: null, extras: [] };
@@ -356,24 +369,70 @@
         document.getElementById('topBar').classList.toggle('scrolled', window.scrollY > 10);
     });
 
+    // ── Petits utilitaires ──
+    function escHtml(s) { var d = document.createElement('div'); d.textContent = s == null ? '' : String(s); return d.innerHTML; }
+    function escAttr(s) {
+        return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/"/g, '&quot;')
+            .replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+    function fmtPrice(v) {
+        var n = Number(v);
+        if (!isFinite(n)) n = 0;
+        return (Math.round(n * 100) % 100 === 0 ? String(Math.round(n)) : n.toFixed(2).replace('.', ',')) + '$';
+    }
+
     // ── Render service cards ──
     function renderServices() {
         var html = '';
-        services.forEach(function(s) {
+        services.forEach(function(s, i) {
             var sel = selected.service === s.name;
-            html += '<div class="svc-card' + (sel ? ' selected' : '') + '" onclick="selectService(\'' + s.name + '\',' + s.price + ')">';
-            html += '<div class="svc-head"><i class="fas ' + s.icon + '"></i><strong>' + s.name + '</strong></div>';
-            html += '<div class="svc-desc">' + s.desc + '</div>';
-            html += '<div class="svc-price">' + s.price + '$</div>';
+            html += '<div class="svc-card' + (sel ? ' selected' : '') + '" onclick="selectService(' + i + ')">';
+            html += '<div class="svc-head"><i class="fas ' + escAttr(s.icon) + '"></i><strong>' + escHtml(s.name) + '</strong></div>';
+            html += '<div class="svc-desc">' + escHtml(s.desc) + '</div>';
+            html += '<div class="svc-price">' + fmtPrice(s.price) + '</div>';
             html += '</div>';
         });
         document.getElementById('serviceCards').innerHTML = html;
     }
 
-    function selectService(name, price) {
-        selected.service = name; selected.price = price;
+    function selectService(index) {
+        var s = services[index];
+        if (!s) return;
+        selected.service = s.name;
+        selected.price = s.price;
         renderServices();
         setTimeout(function(){ goToStep(2); }, 350);
+    }
+
+    // ── Types de véhicule et supplément (issus de la grille tarifaire) ──
+    function renderVehicles() {
+        var select = document.getElementById('r_vehicle');
+        if (!select || !vehicles.length) return;
+        var current = select.value;
+        var html = '<option value="" disabled' + (current ? '' : ' selected') + '>Sélectionnez</option>';
+        vehicles.forEach(function(v) {
+            var suffix = Number(v.price) > 0 ? ' (+' + fmtPrice(v.price) + ')' : '';
+            html += '<option value="' + escAttr(v.name) + '"' + (current === v.name ? ' selected' : '') + '>' +
+                escHtml(v.name) + suffix + '</option>';
+        });
+        select.innerHTML = html;
+    }
+
+    function vehicleSurcharge() {
+        var select = document.getElementById('r_vehicle');
+        var name = select ? select.value : '';
+        for (var i = 0; i < vehicles.length; i++) {
+            if (vehicles[i].name === name) return Number(vehicles[i].price) || 0;
+        }
+        return 0;
+    }
+
+    function vehicleLabel() {
+        var select = document.getElementById('r_vehicle');
+        var name = select ? select.value : '';
+        if (!name) return '—';
+        var surcharge = vehicleSurcharge();
+        return name + (surcharge > 0 ? ' (+' + fmtPrice(surcharge) + ')' : '');
     }
 
     // ── Extras (options cochables) ──
@@ -382,10 +441,10 @@
         extras.forEach(function(x) {
             var on = selected.extras.indexOf(x.name) !== -1;
             html += '<label class="extra-opt' + (on ? ' selected' : '') + '">';
-            html += '<input type="checkbox" value="' + x.name + '"' + (on ? ' checked' : '') + ' onchange="toggleExtra(this)">';
-            html += '<span class="eo-body"><span class="eo-head"><strong>' + x.name + '</strong>';
-            html += '<span class="eo-price">' + x.price + ',00 $</span></span>';
-            html += '<span class="eo-desc">' + x.desc + '</span></span></label>';
+            html += '<input type="checkbox" value="' + escAttr(x.name) + '"' + (on ? ' checked' : '') + ' onchange="toggleExtra(this)">';
+            html += '<span class="eo-body"><span class="eo-head"><strong>' + escHtml(x.name) + '</strong>';
+            html += '<span class="eo-price">' + fmtPrice(x.price) + '</span></span>';
+            html += '<span class="eo-desc">' + escHtml(x.desc) + '</span></span></label>';
         });
         document.getElementById('extrasList').innerHTML = html;
     }
@@ -411,7 +470,7 @@
     }
 
     function reservationTotal() {
-        return (selected.price || 0) + extrasTotal();
+        return (selected.price || 0) + extrasTotal() + vehicleSurcharge();
     }
 
     // ── Calendar ──
@@ -490,12 +549,16 @@
 
     function updateSummary() {
         document.getElementById('sumService').textContent = selected.service || '—';
-        document.getElementById('sumPrice').textContent = selected.price ? selected.price + '$' : '—';
+        document.getElementById('sumPrice').textContent = selected.price ? fmtPrice(selected.price) : '—';
+        document.getElementById('sumVehicle').textContent = vehicleLabel();
         document.getElementById('sumExtras').textContent = selected.extras.length ? selected.extras.join(', ') : 'Aucune';
         document.getElementById('sumDate').textContent = selected.date ? formatDisplayDate(selected.date) : '—';
         document.getElementById('sumTime').textContent = selected.time || '—';
-        document.getElementById('sumTotal').textContent = selected.price ? reservationTotal() + '$' : '—';
+        document.getElementById('sumTotal').textContent = selected.price ? fmtPrice(reservationTotal()) : '—';
     }
+
+    // Le choix du véhicule met à jour le total (supplément issu de la grille)
+    document.getElementById('r_vehicle').addEventListener('change', updateSummary);
 
     // ── Step navigation ──
     function goToStep(n) {
@@ -555,10 +618,11 @@
             if (data.success) {
                 document.getElementById('sumId').textContent = '#' + data.id;
                 document.getElementById('sumService2').textContent = selected.service;
+                document.getElementById('sumVehicle2').textContent = vehicleLabel();
                 document.getElementById('sumExtras2').textContent = selected.extras.length ? selected.extras.join(', ') : 'Aucune';
                 document.getElementById('sumDate2').textContent = formatDisplayDate(selected.date);
                 document.getElementById('sumTime2').textContent = selected.time;
-                document.getElementById('sumTotal2').textContent = reservationTotal() + '$';
+                document.getElementById('sumTotal2').textContent = fmtPrice(reservationTotal());
                 goToStep(4);
             } else {
                 errEl.innerHTML = '<i class="fas fa-exclamation-circle"></i> ' + (data.error || 'Erreur lors de la réservation.');
@@ -585,6 +649,7 @@
     buildCatalog(FALLBACK_PRICING);
     renderServices();
     renderExtras();
+    renderVehicles();
     renderCalendar();
     loadPricing();
     </script>

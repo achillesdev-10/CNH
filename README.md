@@ -61,11 +61,18 @@ npm start
 ## 💰 Tarifs
 
 Tous les montants affichés sur le site (services à l'unité, forfaits, options et
-extras) vivent dans la table `pricing` et se modifient depuis l'admin, onglet
-**Tarifs** : prix, description, icône, ordre d'affichage et visibilité (`Actif`),
-sans toucher au code. L'accueil et la page de réservation rechargent la grille
-via `/api/pricing` (le HTML statique de l'accueil sert de repli si l'API est
+extras, ainsi que le supplément éventuel par type de véhicule) vivent dans la
+table `pricing` et se modifient depuis l'admin, onglet **Tarifs** : prix,
+description, icône, ordre d'affichage et visibilité (`Actif`), sans toucher au
+code. L'accueil et la page de réservation rechargent la grille via
+`/api/pricing` (le HTML statique de l'accueil sert de repli si l'API est
 indisponible).
+
+Les **types de véhicule** (`category = 'vehicle'`) alimentent la liste déroulante
+du formulaire de réservation ; leur prix est un supplément ajouté automatiquement
+au total. Tous sont à **0 $** par défaut, donc « tout type de véhicules = même
+prix » : saisissez un montant (ex. +15 $ pour un SUV) pour différencier, ou
+laissez 0 pour ne rien facturer de plus.
 
 Le total estimé d'une réservation (service/forfait + extras cochés) est calculé
 **côté serveur** au moment de la réservation, à partir de la grille, puis figé
@@ -138,7 +145,7 @@ Tables :
 - `reservations` — Réservations en ligne (colonne `extras` : options de soins esthétiques et extras choisis)
 - `settings` — Paramètres du site
 - `stats` — Statistiques de visite
-- `pricing` — Grille tarifaire : services à l'unité, forfaits et options/extras (éditable depuis l'admin)
+- `pricing` — Grille tarifaire : services à l'unité, forfaits, types de véhicule (suppléments) et options/extras (éditable depuis l'admin)
 - `testimonials` — Témoignages clients (modérés)
 - `sessions` — Tokens de session admin (persistants)
 

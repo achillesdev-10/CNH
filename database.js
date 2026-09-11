@@ -51,6 +51,7 @@ const SCHEMA = [
     notes TEXT,
     extras TEXT,
     price_total REAL,
+    vehicle_surcharge REAL,
     status TEXT DEFAULT 'pending',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   )`,
@@ -112,6 +113,15 @@ const DEFAULT_PRICING = [
   { category: 'package', name: 'Essentiel', price: 35, icon: 'fa-star', price_from: 0, bookable: 1, sort_order: 1, description: 'Lavage extérieur complet, jantes, pneus et séchage.', features: ['Lavage extérieur complet', 'Jantes & pneus', 'Essuie-glaces', 'Séchage'] },
   { category: 'package', name: 'Confort', price: 70, icon: 'fa-star', price_from: 0, bookable: 1, sort_order: 2, description: 'Extérieur + intérieur complet (aspiration, tableau de bord, pneus).', features: ['Tout le forfait Essentiel', 'Aspiration intérieure', 'Nettoyage tableau de bord', 'Dressing des pneus', 'Rafraîchissement odeurs'] },
   { category: 'package', name: 'Premium', price: 120, icon: 'fa-crown', price_from: 0, bookable: 1, sort_order: 3, description: 'Service complet : extérieur, intérieur, cire, moteur, cuir et tapis — tous types de véhicules.', features: ['Tout le forfait Confort', 'Tous types de véhicules (prix fixe)', 'Cire haute protection', 'Nettoyage moteur', 'Traitement cuir/vinyle', 'Nettoyage des tapis'] },
+
+  // Types de véhicule : supplément appliqué automatiquement au total de la réservation
+  // (montants à 0 $ par défaut — à définir dans l'admin, onglet Tarifs)
+  { category: 'vehicle', name: 'Berline', price: 0, price_from: 0, bookable: 1, sort_order: 1, description: 'Supplément véhicule de type berline.' },
+  { category: 'vehicle', name: 'SUV', price: 0, price_from: 0, bookable: 1, sort_order: 2, description: 'Supplément véhicule de type SUV.' },
+  { category: 'vehicle', name: 'Minivan', price: 0, price_from: 0, bookable: 1, sort_order: 3, description: 'Supplément véhicule de type minivan.' },
+  { category: 'vehicle', name: 'Camion / Pick-up', price: 0, price_from: 0, bookable: 1, sort_order: 4, description: 'Supplément camion ou pick-up.' },
+  { category: 'vehicle', name: 'Coupé / Roadster', price: 0, price_from: 0, bookable: 1, sort_order: 5, description: 'Supplément coupé ou roadster.' },
+  { category: 'vehicle', name: 'Autre', price: 0, price_from: 0, bookable: 1, sort_order: 6, description: 'Autre type de véhicule.' },
 
   // Options de soins esthétiques et extras (sur demande)
   { category: 'extra', name: 'Nettoyage & Brillance des pneus', price: 15, icon: 'fa-circle-dot', price_from: 0, bookable: 1, sort_order: 1, description: "Dégraissage complet du flanc des pneus, élimination de la poussière de frein et application d'un traitement lustrant longue durée (effet mouillé et protecteur UV)." },
@@ -211,6 +221,7 @@ async function addColumnIfMissing(table, column, type) {
 async function migrate() {
   await addColumnIfMissing('reservations', 'extras', 'TEXT');
   await addColumnIfMissing('reservations', 'price_total', 'REAL');
+  await addColumnIfMissing('reservations', 'vehicle_surcharge', 'REAL');
 }
 
 // ── Grille tarifaire (seed unique, éditable ensuite via l'admin) ─
