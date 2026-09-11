@@ -186,6 +186,46 @@ app.get('/api/reservations', authMiddleware, asyncHandler(async (req, res) => {
   res.json({ reservations, total: total?.count || 0 });
 }));
 
+// ── Export CSV des réservations (respecte le filtre `status` de l'admin) ──
+// Séparateur « ; » et décimales à la française : ouverture directe dans Excel FR.
+const RESERVATION_STATUS_LABELS = { pending: 'En attente', confirmed: 'Confirmé', completed: 'Terminé', cancelled: 'Annulé' };
+
+function csvCell(value) {
+  const s = value === null || value === undefined ? '' : String(value);
+  return '"' + s.replace(/"/g, '""') + '"';
+}
+
+function csvTotal(value) {
+  if (value === null || value === undefined || value === '') return '';
+  const n = Number(value);
+  return Number.isFinite(n) ? String(n).replace('.', ',') : '';
+}
+
+app.get('/api/reservations/export.csv', authMiddleware, asyncHandler(async (req, res) => {
+  const { status } = req.query;
+  const params = [];
+  let where = '';
+  if (status) { where = ' WHERE status = ?'; params.push(status); }
+  const rows = await queryAll('SELECT * FROM reservations' + where + ' ORDER BY reservation_date ASC, reservation_time ASC', params);
+
+  const header = ['#', 'Nom', 'Email', 'Téléphone', 'Type de véhicule', 'Plaque', 'Service', 'Extras', 'Total ($)', 'Date', 'Heure', 'Adresse', 'Ville', 'Code postal', 'Notes', 'Statut', 'Créée le'];
+  const lines = [header.map(csvCell).join(';')];
+  for (const r of rows) {
+    lines.push([
+      r.id, r.name, r.email, r.phone, r.vehicle_type, r.vehicle_plate, r.service, r.extras,
+      csvTotal(r.price_total), r.reservation_date, r.reservation_time, r.address, r.city,
+      r.postal_code, r.notes, RESERVATION_STATUS_LABELS[r.status] || r.status, r.created_at
+    ].map(csvCell).join(';'));
+  }
+
+  // BOM UTF-8 pour que les accents s'affichent correctement dans Excel
+  const csv = '\uFEFF' + lines.join('\r\n') + '\r\n';
+  const stamp = new Date().toISOString().slice(0, 10);
+  res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+  res.setHeader('Content-Disposition', 'attachment; filename="cnh-reservations-' + stamp + (status ? '-' + status : '') + '.csv"');
+  res.send(csv);
+}));
+
 app.patch('/api/reservations/:id', authMiddleware, asyncHandler(async (req, res) => {
   const { status } = req.body;
   if (!['pending', 'confirmed', 'completed', 'cancelled'].includes(status)) return res.status(400).json({ error: 'Statut invalide' });

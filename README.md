@@ -94,6 +94,7 @@ changent ensuite.
 | GET | `/api/reservations/slots?date=YYYY-MM-DD` | Créneaux disponibles |
 | POST | `/api/reservations` | Créer une réservation |
 | GET | `/api/reservations` | Lister les réservations (admin) |
+| GET | `/api/reservations/export.csv` | Export CSV de toutes les réservations, extras et total inclus (admin, filtre `status` optionnel) |
 | PATCH | `/api/reservations/:id` | Modifier le statut |
 | DELETE | `/api/reservations/:id` | Supprimer |
 

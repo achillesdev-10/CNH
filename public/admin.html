@@ -212,13 +212,16 @@
             <div id="tab-reservations" style="display:none">
                 <div class="card">
                     <div class="card-header"><h3><i class="fas fa-calendar-check" style="color:var(--blue)"></i> Toutes les réservations</h3>
-                        <select id="resFilter" style="padding:8px 14px;border:2px solid var(--gray-200);border-radius:10px;font-size:.82rem;font-family:'Inter',sans-serif;font-weight:500;transition:all .3s ease;background:var(--white)">
-                            <option value="">Tous</option>
-                            <option value="pending">En attente</option>
-                            <option value="confirmed">Confirmées</option>
-                            <option value="completed">Terminées</option>
-                            <option value="cancelled">Annulées</option>
-                        </select>
+                        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+                            <select id="resFilter" style="padding:8px 14px;border:2px solid var(--gray-200);border-radius:10px;font-size:.82rem;font-family:'Inter',sans-serif;font-weight:500;transition:all .3s ease;background:var(--white)">
+                                <option value="">Tous</option>
+                                <option value="pending">En attente</option>
+                                <option value="confirmed">Confirmées</option>
+                                <option value="completed">Terminées</option>
+                                <option value="cancelled">Annulées</option>
+                            </select>
+                            <button class="btn btn-primary btn-sm" id="exportReservations" title="Exporte la liste filtrée (avec extras et total estimé) au format CSV"><i class="fas fa-file-csv"></i> Exporter CSV</button>
+                        </div>
                     </div>
                     <div class="card-body table-wrap" id="allReservations"></div>
                 </div>
@@ -464,6 +467,34 @@
     }
 
     document.getElementById('resFilter').addEventListener('change', function() { loadReservations(this.value); });
+
+    // ── Export CSV (toutes les lignes, pas seulement la page affichée) ──
+    document.getElementById('exportReservations').addEventListener('click', function() {
+        var status = document.getElementById('resFilter').value;
+        var btn = this;
+        btn.disabled = true;
+        fetch(API + '/api/reservations/export.csv' + (status ? '?status=' + encodeURIComponent(status) : ''), {
+            headers: { 'Authorization': 'Bearer ' + token }
+        }).then(function(r) {
+            if (r.status === 401) { logout(); throw new Error('Unauthorized'); }
+            if (!r.ok) throw new Error('Export impossible');
+            return r.blob();
+        }).then(function(blob) {
+            var objectUrl = URL.createObjectURL(blob);
+            var a = document.createElement('a');
+            a.href = objectUrl;
+            a.download = 'cnh-reservations-' + new Date().toISOString().slice(0, 10) + (status ? '-' + status : '') + '.csv';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            setTimeout(function() { URL.revokeObjectURL(objectUrl); }, 2000);
+            toast('Export CSV téléchargé !');
+        }).catch(function() {
+            toast('Export impossible.');
+        }).finally(function() {
+            btn.disabled = false;
+        });
+    });
 
     // ── Contacts ──
     function loadContacts(status) {
