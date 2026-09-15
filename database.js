@@ -108,7 +108,7 @@ const DEFAULT_PRICING = [
   { category: 'service', name: 'Nettoyage Moteur', price: 55, icon: 'fa-gears', price_from: 1, bookable: 1, sort_order: 4, description: 'Nettoyage en profondeur du compartiment moteur avec dégraissant professionnel.' },
   { category: 'service', name: 'Protection Cire', price: 65, icon: 'fa-shield-halved', price_from: 1, bookable: 1, sort_order: 5, description: 'Application de cire haute protection pour garder votre voiture brillante plus longtemps.' },
   { category: 'service', name: 'Tous types de véhicules', price: 120, icon: 'fa-truck-pickup', price_from: 0, bookable: 0, sort_order: 6, description: 'Berline, VUS, minivan, camion ou pick-up : le même tarif unique de 120 $ pour un lavage complet.' },
-  { category: 'service', name: 'Lavage de flotte', price: 0, unit: 'Sur devis', icon: 'fa-truck-fast', price_from: 0, bookable: 0, sort_order: 7, description: 'Lavage de flotte de véhicules de tout genre : trailers, camions de béton, boom et pompes à béton. Tarification établie sur devis.' },
+  { category: 'service', name: 'Lavage de flotte', price: 0, unit: 'Sur devis', icon: 'fa-truck-fast', price_from: 0, bookable: 1, sort_order: 7, description: 'Lavage de flotte de véhicules de tout genre : Trailler, camion de béton, Boom, pompe à béton. Tarification établie sur devis.' },
 
   // Forfaits (affichés dans la section Tarifs)
   { category: 'package', name: 'Essentiel', price: 35, icon: 'fa-star', price_from: 0, bookable: 1, sort_order: 1, description: 'Lavage extérieur complet, jantes, pneus et séchage.', features: ['Lavage extérieur complet', 'Jantes & pneus', 'Essuie-glaces', 'Séchage'] },
@@ -246,28 +246,67 @@ async function seedPricing() {
 // Les bases déjà initialisées ne repassent pas par le seed complet :
 // ces lignes du défaut sont insérées si elles sont absentes.
 const PRICING_MIGRATION_ROWS = [
-  { category: 'service', name: 'Lavage de flotte', price: 0, unit: 'Sur devis', icon: 'fa-truck-fast', price_from: 0, bookable: 0, sort_order: 7, description: 'Lavage de flotte de véhicules de tout genre : trailers, camions de béton, boom et pompes à béton. Tarification établie sur devis.' }
+  { category: 'service', name: 'Lavage de flotte', price: 0, unit: 'Sur devis', icon: 'fa-truck-fast', price_from: 0, bookable: 1, sort_order: 7, description: 'Lavage de flotte de véhicules de tout genre : Trailler, camion de béton, Boom, pompe à béton. Tarification établie sur devis.', make_bookable: true, sync_description: true }
 ];
+
+// Anciennes formulations à remplacer automatiquement dans les bases existantes
+const LEGACY_DESCRIPTIONS = [
+  'Lavage de flotte de véhicules de tout genre : trailers, camions de béton, boom et pompes à béton. Tarification établie sur devis.'
+];
+
+// ── Petits helpers SQL valables dans les deux modes ────────────
+async function dbRun(sql, args) {
+  if (usingTurso()) return client.execute({ sql, args });
+  db.run(sql, args);
+}
+
+async function dbScalar(sql, args) {
+  if (usingTurso()) {
+    const res = await client.execute({ sql, args });
+    return res.rows.length ? res.rows[0].v : null;
+  }
+  const stmt = db.prepare(sql);
+  stmt.bind(args);
+  stmt.step();
+  const v = stmt.get()[0];
+  stmt.free();
+  return v == null ? null : v;
+}
+
+async function settingsGetValue(key) {
+  return dbScalar('SELECT value AS v FROM settings WHERE key = ?', [key]);
+}
 
 async function ensurePricingRow(row) {
   try {
     const insertSql = 'INSERT INTO pricing (' + PRICING_COLUMNS.join(', ') + ') VALUES (' + PRICING_COLUMNS.map(() => '?').join(', ') + ')';
-    const checkSql = 'SELECT COUNT(*) as c FROM pricing WHERE category = ? AND name = ?';
+    const checkSql = 'SELECT COUNT(*) AS v FROM pricing WHERE category = ? AND name = ?';
     const args = [row.category, row.name];
-    let exists;
-    if (usingTurso()) {
-      const res = await client.execute({ sql: checkSql, args });
-      exists = Number(res.rows[0].c) > 0;
-      if (!exists) await client.execute({ sql: insertSql, args: pricingSeedValues(row) });
-    } else {
-      const stmt = db.prepare(checkSql);
-      stmt.bind(args);
-      stmt.step();
-      exists = stmt.get()[0] > 0;
-      stmt.free();
-      if (!exists) db.run(insertSql, pricingSeedValues(row));
+    const exists = Number(await dbScalar(checkSql, args)) > 0;
+    if (!exists) {
+      await dbRun(insertSql, pricingSeedValues(row));
+      console.log('✅ Grille tarifaire : ligne « ' + row.name + ' » ajoutée');
     }
-    if (!exists) console.log('✅ Grille tarifaire : ligne « ' + row.name + ' » ajoutée');
+    // Migration ponctuelle : rendre réservable une ligne déjà présente
+    // (le drapeau en settings évite d'écraser un choix fait ensuite dans l'admin)
+    if (row.make_bookable) {
+      const flag = 'pricing_bookable_' + String(row.name).toLowerCase().replace(/[^a-z0-9]+/g, '_');
+      if (!await settingsGetValue(flag)) {
+        await dbRun('UPDATE pricing SET bookable = 1 WHERE category = ? AND name = ? AND bookable = 0', args);
+        await dbRun('INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)', [flag, 'done']);
+        console.log('✅ Grille tarifaire : « ' + row.name + ' » est désormais réservable en ligne');
+      }
+    }
+    // Mise à jour du libellé si la ligne existante porte encore une ancienne version
+    // de la description (écrase un texte non modifié, jamais une description éditée)
+    if (row.sync_description && exists) {
+      const current = await dbScalar('SELECT description AS v FROM pricing WHERE category = ? AND name = ?', args);
+      if (current && LEGACY_DESCRIPTIONS.includes(String(current))) {
+        await dbRun('UPDATE pricing SET description = ? WHERE category = ? AND name = ?',
+          [row.description, ...args]);
+        console.log('✅ Grille tarifaire : description de « ' + row.name + ' » mise à jour');
+      }
+    }
   } catch (err) {
     // Ne jamais empêcher le démarrage de l'application à cause d'une migration
     console.warn('⚠️  Ajout de la ligne « ' + row.name + ' » ignoré :', err.message);
@@ -375,4 +414,4 @@ if (!usingTurso()) {
   process.on('SIGINT', () => { saveDatabase(); process.exit(); });
 }
 
-module.exports = { initDatabase, queryAll, queryOne, runSql, saveDatabase };
+module.exports = { initDatabase, queryAll, queryOne, runSql, saveDatabase, migratePricingRows };

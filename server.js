@@ -148,22 +148,34 @@ app.get('/api/reservations/slots', asyncHandler(async (req, res) => {
 
 app.post('/api/reservations', asyncHandler(async (req, res) => {
   const { name, email, phone, vehicle_type, vehicle_plate, service, address, city, postal_code, date, time, notes, extras } = req.body;
-  if (!name || !email || !phone || !vehicle_type || !service || !address || !city || !date || !time) {
+  if (!name || !email || !phone || !vehicle_type || !service || !address || !city || !date) {
     return res.status(400).json({ error: 'Tous les champs obligatoires sont requis' });
   }
   if (!isValidEmail(email)) return res.status(400).json({ error: 'Email invalide' });
   if (!/^\d{4}-\d{2}-\d{2}$/.test(String(date))) return res.status(400).json({ error: 'Date invalide' });
-  if (!TIME_SLOTS.includes(time)) return res.status(400).json({ error: 'Heure invalide' });
+  // Créneau horaire facultatif pour les prestations « Sur devis » : l'horaire réel
+  // est convenu avec le client lors de l'établissement du devis.
+  if (time && !TIME_SLOTS.includes(time)) return res.status(400).json({ error: 'Heure invalide' });
+  const isQuoteService = await isQuoteServiceName(service);
+  if (!time && !isQuoteService) return res.status(400).json({ error: 'Heure requise' });
   const extraNames = Array.isArray(extras)
     ? extras.map(e => String(e).trim()).filter(Boolean)
     : (typeof extras === 'string' && extras.trim() ? extras.split(',').map(e => e.trim()).filter(Boolean) : []);
   const cleanExtras = extraNames.length ? extraNames.join(', ').slice(0, 500) : null;
   const { total: priceTotal, surcharge: vehicleSurcharge } = await computeReservationPricing(service, extraNames, vehicle_type);
-  const existing = await queryOne("SELECT id FROM reservations WHERE reservation_date = ? AND reservation_time = ? AND status IN ('pending','confirmed')", [date, time]);
+  const existing = time
+    ? await queryOne("SELECT id FROM reservations WHERE reservation_date = ? AND reservation_time = ? AND status IN ('pending','confirmed')", [date, time])
+    : null;
   if (existing) return res.status(409).json({ error: 'Ce créneau est déjà réservé.' });
+  // Notes : pour un devis, on indique que l'horaire réel sera convenu avec le client
+  const notesValue = notes || null;
+  const timeValue = time || TIME_PENDING;
+  const notesForDb = (isQuoteService && !time && notesValue)
+    ? notesValue + ' [Horaire à convenir — prestation sur devis]'
+    : (isQuoteService && !time ? 'Horaire à convenir — prestation sur devis' : notesValue);
   try {
     const id = await runSql('INSERT INTO reservations (name, email, phone, vehicle_type, vehicle_plate, service, address, city, postal_code, reservation_date, reservation_time, notes, extras, price_total, vehicle_surcharge) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-      [name, email, phone, vehicle_type, vehicle_plate || null, service, address, city, postal_code || null, date, time, notes || null, cleanExtras, priceTotal, vehicleSurcharge]);
+      [name, email, phone, vehicle_type, vehicle_plate || null, service, address, city, postal_code || null, date, timeValue, notesForDb, cleanExtras, priceTotal, vehicleSurcharge]);
     await runSql("INSERT INTO stats (type, value) VALUES ('reservation', 1)");
     res.json({ success: true, id });
   } catch (err) {
@@ -182,7 +194,7 @@ app.get('/api/reservations', authMiddleware, asyncHandler(async (req, res) => {
   const total = await queryOne('SELECT COUNT(*) as count FROM reservations WHERE 1=1' + where, params);
   const sql = 'SELECT * FROM reservations WHERE 1=1' + where + ' ORDER BY reservation_date ASC, reservation_time ASC LIMIT ? OFFSET ?';
   params.push(cleanInt(limit, 50, 1, 200), cleanInt(offset, 0, 0, 1000000));
-  const reservations = await queryAll(sql, params);
+  const reservations = (await queryAll(sql, params)).map(serializeReservation);
   res.json({ reservations, total: total?.count || 0 });
 }));
 
@@ -201,6 +213,19 @@ function csvTotal(value) {
   return Number.isFinite(n) ? String(n).replace('.', ',') : '';
 }
 
+// Une prestation sans tarif (ex. « Sur devis ») n'a pas d'horaire fixé : le total
+// est vide (devis à établir) et le créneau réel est convenu avec le client.
+function csvSeance(time, priceTotal) {
+  if (!time || time === TIME_PENDING) {
+    return (priceTotal === null || priceTotal === undefined || priceTotal === '') ? 'Sur devis' : '';
+  }
+  return String(time);
+}
+
+function csvHeure(time) {
+  return time === TIME_PENDING ? '' : time;
+}
+
 app.get('/api/reservations/export.csv', authMiddleware, asyncHandler(async (req, res) => {
   const { status } = req.query;
   const params = [];
@@ -208,12 +233,12 @@ app.get('/api/reservations/export.csv', authMiddleware, asyncHandler(async (req,
   if (status) { where = ' WHERE status = ?'; params.push(status); }
   const rows = await queryAll('SELECT * FROM reservations' + where + ' ORDER BY reservation_date ASC, reservation_time ASC', params);
 
-  const header = ['#', 'Nom', 'Email', 'Téléphone', 'Type de véhicule', 'Plaque', 'Service', 'Extras', 'Supplément véhicule ($)', 'Total ($)', 'Date', 'Heure', 'Adresse', 'Ville', 'Code postal', 'Notes', 'Statut', 'Créée le'];
+  const header = ['#', 'Nom', 'Email', 'Téléphone', 'Type de véhicule', 'Plaque', 'Service', 'Extras', 'Supplément véhicule ($)', 'Total ($)', 'Date', 'Séance', 'Heure', 'Adresse', 'Ville', 'Code postal', 'Notes', 'Statut', 'Créée le'];
   const lines = [header.map(csvCell).join(';')];
   for (const r of rows) {
     lines.push([
       r.id, r.name, r.email, r.phone, r.vehicle_type, r.vehicle_plate, r.service, r.extras,
-      csvTotal(r.vehicle_surcharge), csvTotal(r.price_total), r.reservation_date, r.reservation_time,
+      csvTotal(r.vehicle_surcharge), csvTotal(r.price_total), r.reservation_date, csvSeance(r.reservation_time, r.price_total), csvHeure(r.reservation_time),
       r.address, r.city, r.postal_code, r.notes, RESERVATION_STATUS_LABELS[r.status] || r.status, r.created_at
     ].map(csvCell).join(';'));
   }
@@ -254,7 +279,8 @@ app.get('/api/stats/dashboard', authMiddleware, asyncHandler(async (req, res) =>
   const weeklyActivity = await queryAll("SELECT date, type, SUM(value) as total FROM stats WHERE date >= date('now','-7 days') GROUP BY date, type ORDER BY date ASC");
   const recentContacts = await queryAll('SELECT * FROM contacts ORDER BY created_at DESC LIMIT 5');
   const recentReservations = await queryAll('SELECT * FROM reservations ORDER BY created_at DESC LIMIT 5');
-  const topServices = await queryAll('SELECT service, COUNT(*) as count FROM reservations GROUP BY service ORDER BY count DESC LIMIT 5');
+  const topServices = await queryAll("SELECT service, COUNT(*) as count, SUM(CASE WHEN price_total IS NULL THEN 1 ELSE 0 END) as quotes FROM reservations GROUP BY service ORDER BY count DESC LIMIT 5");
+  const topServicesRows = topServices.map(s => ({ ...s, quotes: Number(s.quotes) || 0 }));
 
   res.json({
     overview: {
@@ -262,7 +288,7 @@ app.get('/api/stats/dashboard', authMiddleware, asyncHandler(async (req, res) =>
       avgRating: rating?.avg_rating != null ? rating.avg_rating : null,
       ratingsCount: rating?.count || 0
     },
-    weeklyActivity, recentContacts, recentReservations, topServices
+    weeklyActivity, recentContacts, recentReservations, topServices: topServicesRows
   });
 }));
 
@@ -352,6 +378,29 @@ function serializePricing(row) {
   };
 }
 
+const QUOTE_UNIT = 'Sur devis';
+
+// Les schémas (local et Turso) imposent reservation_time NOT NULL : pour les
+// prestations « Sur devis » dont l'horaire n'est pas encore fixé, on stocke
+// ce marqueur en base, puis serializeReservation() le présente comme null à
+// l'admin et aux exports.
+const TIME_PENDING = 'À convenir';
+
+function serializeReservation(row) {
+  if (row && row.reservation_time === TIME_PENDING) row.reservation_time = null;
+  return row;
+}
+
+// Prestations facturées sur devis : aucune ligne de grille active ne porte
+// ce nom (ou sa ligne a un prix nul avec une unité « Sur devis »), donc le
+// total d'une réservation restera vide et le créneau horaire est facultatif.
+async function isQuoteServiceName(serviceName) {
+  const name = String(serviceName || '').trim();
+  if (!name) return false;
+  const row = await queryOne('SELECT price, unit FROM pricing WHERE active = 1 AND name = ?', [name]);
+  return !row || (Number(row.price) === 0 && String(row.unit || '') === QUOTE_UNIT);
+}
+
 // Valide un tarif. `partial` = true pour un PATCH (seuls les champs envoyés sont traités)
 function readPricingPayload(body, partial) {
   const out = {};
@@ -429,6 +478,8 @@ app.delete('/api/pricing/:id', authMiddleware, asyncHandler(async (req, res) => 
 // (jamais depuis le client) et figé au moment de la réservation.
 // La grille ne contient qu'un prix : un type de véhicule sans supplément reste à 0 $,
 // donc « tout type de véhicules = même prix » (voir DEFAULT_PRICING).
+// Pour une prestation « Sur devis » (ex. lavage de flotte), le total reste vide :
+// les extras retenus restent enregistrés, le prix sera fixé après contact.
 async function computeReservationPricing(serviceName, extraNames, vehicleType) {
   const rows = await queryAll('SELECT category, name, price FROM pricing WHERE active = 1');
   const prices = new Map(rows.filter(r => r.category !== 'vehicle').map(r => [r.name, Number(r.price) || 0]));
@@ -436,6 +487,8 @@ async function computeReservationPricing(serviceName, extraNames, vehicleType) {
   const surcharge = vehicles.get(vehicleType) || 0;
   // Service retiré de la grille : on ne devine pas de prix, on laisse le total vide.
   if (!prices.has(serviceName)) return { total: null, surcharge };
+  // Prestation « Sur devis » : le total reste vide, l'équipe fixe le prix après contact.
+  if (await isQuoteServiceName(serviceName)) return { total: null, surcharge };
   let total = prices.get(serviceName);
   for (const name of extraNames) {
     if (prices.has(name)) total += prices.get(name);

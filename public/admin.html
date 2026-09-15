@@ -412,7 +412,7 @@
             // Top services
             var svcHtml = '';
             data.topServices.forEach(function(s) {
-                svcHtml += '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--gray-100);transition:background .2s"><span style="font-size:.88rem;color:var(--slate);font-weight:500">'+s.service+'</span><span class="badge confirmed">'+s.count+' réservations</span></div>';
+                svcHtml += '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--gray-100);transition:background .2s"><span style="font-size:.88rem;color:var(--slate);font-weight:500">'+s.service+'</span><span style="white-space:nowrap"><span class="badge confirmed">'+s.count+' résa</span>'+(Number(s.quotes)>0?' <span class="badge pending">'+s.quotes+' devis</span>':'')+'</span></div>';
             });
             document.getElementById('topServices').innerHTML = svcHtml || '<div class="empty-state"><i class="fas fa-inbox"></i><p>Aucune donnée</p></div>';
 
@@ -625,7 +625,7 @@
     //  GRILLE TARIFAIRE
     // ══════════════════════════════════════
     var PRICING_META = {
-        service: { label: 'Services à l\'unité', fields: ['name','price','unit','description','icon','price_from','active','sort_order'] },
+        service: { label: 'Services à l\'unité', fields: ['name','price','unit','description','icon','price_from','bookable','active','sort_order'] },
         package: { label: 'Forfaits', fields: ['name','price','unit','description','features','active','sort_order'] },
         vehicle: { label: 'Types de véhicule (supplément ajouté au total)', fields: ['name','price','active','sort_order'] },
         extra:   { label: 'Options & extras (sur demande)', fields: ['name','price','unit','description','icon','active','sort_order'] }
@@ -634,7 +634,7 @@
     var PRICING_LABELS = {
         name: 'Nom', price: 'Prix ($)', unit: 'Unité (ex. / véhicule)', description: 'Description',
         icon: 'Icône (fa-...)', features: 'Caractéristiques — une par ligne',
-        price_from: 'À partir de', active: 'Actif', sort_order: 'Ordre'
+        price_from: 'À partir de', bookable: 'Réservable en ligne', active: 'Actif', sort_order: 'Ordre'
     };
     var pricingList = [];
 
@@ -647,8 +647,8 @@
         if (field === 'features') {
             return '<textarea data-field="features" rows="3">' + escAttr((val || []).join('\n')) + '</textarea>';
         }
-        if (field === 'active' || field === 'price_from') {
-            return '<input type="checkbox" data-field="' + field + '"' + (val ? ' checked' : '') + '>';
+        if (field === 'active' || field === 'price_from' || field === 'bookable') {
+            return '<input type="checkbox" data-field="' + field + '"' + (val ? ' checked' : '') + ' title="' + (field === 'bookable' ? 'Visible dans le module de réservation en ligne' : '') + '">';
         }
         if (field === 'price' || field === 'sort_order') {
             return '<input type="number" data-field="' + field + '" step="' + (field === 'price' ? '0.01' : '1') + '" value="' + escAttr(val == null ? '' : val) + '">';
@@ -680,7 +680,7 @@
         var fields = PRICING_META[category].fields.filter(function(f) { return f !== 'sort_order'; });
         var html = '<div class="add-row" data-category="' + category + '">';
         fields.forEach(function(f) {
-            var seed = { active: true, price: 0 };
+            var seed = { active: true, bookable: true, price: 0 };
             html += '<label>' + PRICING_LABELS[f] + priceField(seed, f) + '</label>';
         });
         html += '<button class="btn btn-primary btn-sm" onclick="addPricing(\'' + category + '\', this)"><i class="fas fa-plus"></i> Ajouter</button></div>';

@@ -90,6 +90,9 @@
         .svc-card .svc-head strong{color:var(--slate);font-size:.95rem}
         .svc-card .svc-desc{font-size:.8rem;color:var(--gray-500);margin-bottom:8px}
         .svc-card .svc-price{font-size:1.2rem;font-weight:800;color:var(--blue)}
+        .svc-card .svc-price.quote{font-size:1.05rem;color:var(--amber)}
+        .quote-hint{margin-top:14px;padding:10px 14px;border-radius:10px;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.25);color:var(--amber);font-size:.85rem;line-height:1.5}
+        .quote-hint i{margin-right:6px}
 
         /* ── Calendar ── */
         .calendar-wrapper{margin-bottom:20px}
@@ -193,8 +196,9 @@
 
         <!-- Step 1: Service Selection -->
         <div class="form-card" id="step1">
+            <p class="quote-hint" id="quoteHint" style="display:none"><i class="fas fa-file-invoice"></i> Prestation sur devis : date indicative, horaire à convenir, total établi après demande.</p>
             <h2>Choisissez votre service</h2>
-            <p class="subtitle">Sélectionnez le forfait qui correspond à vos besoins.</p>
+            <p class="subtitle">Sélectionnez le forfait ou la prestation qui correspond à vos besoins.</p>
             <div id="serviceCards" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px"></div>
             <p style="margin-top:18px;font-size:.85rem;color:var(--gray-500)"><i class="fas fa-circle-plus" style="color:var(--blue);margin-right:6px"></i> Des options &amp; soins esthétiques (pneus, cuirs, cire express, tapis) pourront être ajoutées à l'étape 3.</p>
         </div>
@@ -203,6 +207,7 @@
         <div class="form-card" id="step2" style="display:none">
             <h2>Choisissez la date et l'heure</h2>
             <p class="subtitle">Sélectionnez un créneau disponible.</p>
+            <p class="quote-hint" id="quoteSlotHint" style="display:none"><i class="fas fa-circle-info"></i> Prestation sur devis : la date sert d'indication, l'horaire réel sera convenu avec vous.</p>
             <div class="calendar-wrapper">
                 <div class="calendar-header">
                     <button class="cal-nav" id="prevMonth"><i class="fas fa-chevron-left"></i></button>
@@ -251,6 +256,7 @@
                     <h3><i class="fas fa-receipt"></i> Résumé de votre réservation</h3>
                     <div class="summary-row"><span>Service</span><strong id="sumService">—</strong></div>
                     <div class="summary-row"><span>Prix</span><strong id="sumPrice" style="color:var(--blue)">—</strong></div>
+                    <div class="summary-row" id="rowQuote" style="display:none"><span>Devis</span><strong>À établir — vous recevrez un prix personnalisé</strong></div>
                     <div class="summary-row"><span>Type de véhicule</span><strong id="sumVehicle">—</strong></div>
                     <div class="summary-row"><span>Options &amp; extras</span><strong id="sumExtras">Aucune</strong></div>
                     <div class="summary-row"><span>Date</span><strong id="sumDate">—</strong></div>
@@ -277,6 +283,7 @@
                     <h3><i class="fas fa-receipt"></i> Détails</h3>
                     <div class="summary-row"><span>Réservation #</span><strong id="sumId">—</strong></div>
                     <div class="summary-row"><span>Service</span><strong id="sumService2">—</strong></div>
+                    <div class="summary-row" id="rowQuote2" style="display:none"><span>Devis</span><strong>À établir — nous vous contacterons avec le prix</strong></div>
                     <div class="summary-row"><span>Type de véhicule</span><strong id="sumVehicle2">—</strong></div>
                     <div class="summary-row"><span>Options &amp; extras</span><strong id="sumExtras2">Aucune</strong></div>
                     <div class="summary-row"><span>Date</span><strong id="sumDate2">—</strong></div>
@@ -303,6 +310,7 @@
         { category: 'service', name: 'Detailing Complet', price: 85, icon: 'fa-wand-magic-sparkles', description: 'Lavage extérieur et intérieur complet + cire, dressing des pneus et finition premium.', bookable: true },
         { category: 'service', name: 'Nettoyage Moteur', price: 55, icon: 'fa-gears', description: 'Nettoyage en profondeur du compartiment moteur avec dégraissant professionnel.', bookable: true },
         { category: 'service', name: 'Protection Cire', price: 65, icon: 'fa-shield-halved', description: 'Application de cire haute protection pour garder votre voiture brillante plus longtemps.', bookable: true },
+        { category: 'service', name: 'Lavage de flotte', price: 0, icon: 'fa-truck-fast', unit: 'Sur devis', description: 'Lavage de flotte de véhicules de tout genre : Trailler, camion de béton, Boom, pompe à béton. Tarification établie sur devis.', bookable: true },
         { category: 'package', name: 'Essentiel', price: 35, icon: 'fa-star', description: 'Lavage extérieur complet, jantes, pneus et séchage.' },
         { category: 'package', name: 'Confort', price: 70, icon: 'fa-star', description: 'Extérieur + intérieur complet (aspiration, tableau de bord, pneus).' },
         { category: 'package', name: 'Premium', price: 120, icon: 'fa-crown', description: 'Service complet : extérieur, intérieur, cire, moteur, cuir et tapis — tous types de véhicules.' },
@@ -330,10 +338,10 @@
             if (!r || r.active === false) return;
             if (r.category === 'service') {
                 if (r.bookable === false) return; // ligne d'information (ex. « tous types de véhicules »)
-                bookable.push({ name: r.name, price: r.price, icon: r.icon || 'fa-spray-can-sparkles', desc: r.description || '' });
+                bookable.push({ name: r.name, price: r.price, icon: r.icon || 'fa-spray-can-sparkles', desc: r.description || '', isQuote: r.unit === 'Sur devis' });
             } else if (r.category === 'package') {
                 if (r.bookable === false) return;
-                bookable.push({ name: r.name, price: r.price, icon: r.icon || 'fa-star', desc: r.description || '' });
+                bookable.push({ name: r.name, price: r.price, icon: r.icon || 'fa-star', desc: r.description || '', isQuote: false });
             } else if (r.category === 'extra') {
                 options.push({ name: r.name, price: r.price, desc: r.description || '', icon: r.icon || 'fa-star' });
             } else if (r.category === 'vehicle') {
@@ -362,6 +370,7 @@
     }
 
     var selected = { service: null, price: null, date: null, time: null, extras: [] };
+    var isQuote = false; // prestation « Sur devis » : horaire facultatif, total à établir
     var calDate = new Date();
 
     // ── Scroll shadow for top bar ──
@@ -389,7 +398,7 @@
             html += '<div class="svc-card' + (sel ? ' selected' : '') + '" onclick="selectService(' + i + ')">';
             html += '<div class="svc-head"><i class="fas ' + escAttr(s.icon) + '"></i><strong>' + escHtml(s.name) + '</strong></div>';
             html += '<div class="svc-desc">' + escHtml(s.desc) + '</div>';
-            html += '<div class="svc-price">' + fmtPrice(s.price) + '</div>';
+            html += '<div class="svc-price' + (s.isQuote ? ' quote' : '') + '">' + (s.isQuote ? 'Sur devis' : fmtPrice(s.price)) + '</div>';
             html += '</div>';
         });
         document.getElementById('serviceCards').innerHTML = html;
@@ -400,6 +409,7 @@
         if (!s) return;
         selected.service = s.name;
         selected.price = s.price;
+        isQuote = !!s.isQuote;
         renderServices();
         setTimeout(function(){ goToStep(2); }, 350);
     }
@@ -514,7 +524,8 @@
         selected.time = null;
         renderCalendar();
         loadSlots(selected.date);
-        document.getElementById('step2Next').disabled = true;
+        // Pour un devis, l'horaire est facultatif : on peut continuer dès la date choisie
+        document.getElementById('step2Next').disabled = !isQuote;
     }
 
     document.getElementById('prevMonth').addEventListener('click', function() { calDate.setMonth(calDate.getMonth()-1); renderCalendar(); });
@@ -550,11 +561,12 @@
     function updateSummary() {
         document.getElementById('sumService').textContent = selected.service || '—';
         document.getElementById('sumPrice').textContent = selected.price ? fmtPrice(selected.price) : '—';
+        document.getElementById('rowQuote').style.display = isQuote ? '' : 'none';
         document.getElementById('sumVehicle').textContent = vehicleLabel();
         document.getElementById('sumExtras').textContent = selected.extras.length ? selected.extras.join(', ') : 'Aucune';
         document.getElementById('sumDate').textContent = selected.date ? formatDisplayDate(selected.date) : '—';
-        document.getElementById('sumTime').textContent = selected.time || '—';
-        document.getElementById('sumTotal').textContent = selected.price ? fmtPrice(reservationTotal()) : '—';
+        document.getElementById('sumTime').textContent = selected.time || (isQuote && selected.date ? 'À convenir' : '—');
+        document.getElementById('sumTotal').textContent = isQuote ? 'Sur devis' : (selected.price ? fmtPrice(reservationTotal()) : '—');
     }
 
     // Le choix du véhicule met à jour le total (supplément issu de la grille)
@@ -574,6 +586,8 @@
             if (i+1 === n) el.classList.add('active');
         });
         if (n === 3) updateSummary();
+        document.getElementById('quoteHint').style.display = (isQuote && n === 1) ? '' : 'none';
+        document.getElementById('quoteSlotHint').style.display = (isQuote && n === 2) ? '' : 'none';
         window.scrollTo({top: 0, behavior: 'smooth'});
     }
 
@@ -609,7 +623,7 @@
                 service: selected.service,
                 address: address, city: city,
                 postal_code: document.getElementById('r_postal').value.trim() || null,
-                date: selected.date, time: selected.time,
+                date: selected.date, time: selected.time || null,
                 notes: document.getElementById('r_notes').value.trim() || null,
                 extras: selected.extras.length ? selected.extras.join(', ') : null
             })
@@ -621,8 +635,9 @@
                 document.getElementById('sumVehicle2').textContent = vehicleLabel();
                 document.getElementById('sumExtras2').textContent = selected.extras.length ? selected.extras.join(', ') : 'Aucune';
                 document.getElementById('sumDate2').textContent = formatDisplayDate(selected.date);
-                document.getElementById('sumTime2').textContent = selected.time;
-                document.getElementById('sumTotal2').textContent = fmtPrice(reservationTotal());
+                document.getElementById('rowQuote2').style.display = isQuote ? '' : 'none';
+                document.getElementById('sumTime2').textContent = selected.time || 'À convenir';
+                document.getElementById('sumTotal2').textContent = isQuote ? 'Sur devis' : fmtPrice(reservationTotal());
                 goToStep(4);
             } else {
                 errEl.innerHTML = '<i class="fas fa-exclamation-circle"></i> ' + (data.error || 'Erreur lors de la réservation.');
@@ -639,6 +654,7 @@
 
     function resetReservation() {
         selected = { service: null, price: null, date: null, time: null, extras: [] };
+        isQuote = false;
         document.getElementById('reservationForm').reset();
         goToStep(1);
         renderServices();
