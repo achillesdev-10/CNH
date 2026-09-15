@@ -108,6 +108,7 @@ const DEFAULT_PRICING = [
   { category: 'service', name: 'Nettoyage Moteur', price: 55, icon: 'fa-gears', price_from: 1, bookable: 1, sort_order: 4, description: 'Nettoyage en profondeur du compartiment moteur avec dégraissant professionnel.' },
   { category: 'service', name: 'Protection Cire', price: 65, icon: 'fa-shield-halved', price_from: 1, bookable: 1, sort_order: 5, description: 'Application de cire haute protection pour garder votre voiture brillante plus longtemps.' },
   { category: 'service', name: 'Tous types de véhicules', price: 120, icon: 'fa-truck-pickup', price_from: 0, bookable: 0, sort_order: 6, description: 'Berline, VUS, minivan, camion ou pick-up : le même tarif unique de 120 $ pour un lavage complet.' },
+  { category: 'service', name: 'Lavage de flotte', price: 0, unit: 'Sur devis', icon: 'fa-truck-fast', price_from: 0, bookable: 0, sort_order: 7, description: 'Lavage de flotte de véhicules de tout genre : trailers, camions de béton, boom et pompes à béton. Tarification établie sur devis.' },
 
   // Forfaits (affichés dans la section Tarifs)
   { category: 'package', name: 'Essentiel', price: 35, icon: 'fa-star', price_from: 0, bookable: 1, sort_order: 1, description: 'Lavage extérieur complet, jantes, pneus et séchage.', features: ['Lavage extérieur complet', 'Jantes & pneus', 'Essuie-glaces', 'Séchage'] },
@@ -241,6 +242,42 @@ async function seedPricing() {
   console.log('✅ Grille tarifaire initialisée (' + DEFAULT_PRICING.length + ' lignes)');
 }
 
+// ── Migrations de contenu de la grille tarifaire ──────────────
+// Les bases déjà initialisées ne repassent pas par le seed complet :
+// ces lignes du défaut sont insérées si elles sont absentes.
+const PRICING_MIGRATION_ROWS = [
+  { category: 'service', name: 'Lavage de flotte', price: 0, unit: 'Sur devis', icon: 'fa-truck-fast', price_from: 0, bookable: 0, sort_order: 7, description: 'Lavage de flotte de véhicules de tout genre : trailers, camions de béton, boom et pompes à béton. Tarification établie sur devis.' }
+];
+
+async function ensurePricingRow(row) {
+  try {
+    const insertSql = 'INSERT INTO pricing (' + PRICING_COLUMNS.join(', ') + ') VALUES (' + PRICING_COLUMNS.map(() => '?').join(', ') + ')';
+    const checkSql = 'SELECT COUNT(*) as c FROM pricing WHERE category = ? AND name = ?';
+    const args = [row.category, row.name];
+    let exists;
+    if (usingTurso()) {
+      const res = await client.execute({ sql: checkSql, args });
+      exists = Number(res.rows[0].c) > 0;
+      if (!exists) await client.execute({ sql: insertSql, args: pricingSeedValues(row) });
+    } else {
+      const stmt = db.prepare(checkSql);
+      stmt.bind(args);
+      stmt.step();
+      exists = stmt.get()[0] > 0;
+      stmt.free();
+      if (!exists) db.run(insertSql, pricingSeedValues(row));
+    }
+    if (!exists) console.log('✅ Grille tarifaire : ligne « ' + row.name + ' » ajoutée');
+  } catch (err) {
+    // Ne jamais empêcher le démarrage de l'application à cause d'une migration
+    console.warn('⚠️  Ajout de la ligne « ' + row.name + ' » ignoré :', err.message);
+  }
+}
+
+async function migratePricingRows() {
+  for (const row of PRICING_MIGRATION_ROWS) await ensurePricingRow(row);
+}
+
 // ── Init ───────────────────────────────────────────────────────
 async function initDatabase() {
   if (initPromise) return initPromise;
@@ -255,6 +292,7 @@ async function initDatabase() {
       await migrate();
       await seedTurso();
       await seedPricing();
+      await migratePricingRows();
       console.log('✅ Turso database ready');
       return client;
     }
@@ -276,6 +314,7 @@ async function initDatabase() {
     await migrate();
     seedLocal();
     await seedPricing();
+    await migratePricingRows();
     saveDatabase();
     console.log('✅ Local SQLite database initialized');
     return db;

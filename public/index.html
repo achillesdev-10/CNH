@@ -402,6 +402,13 @@
                         <div class="price">120$ <span style="font-size:.9rem;font-weight:500;color:var(--gray-400)">/ véhicule</span></div><a href="/reservation" class="btn btn-primary">Réserver</a>
                     </div>
                 </div>
+                <div class="service-card reveal">
+                    <div class="service-img"><img src="https://images.unsplash.com/photo-1519003722824-194d4455a60c?w=800&q=85" alt="Lavage professionnel d'un camion et d'une remorque de flotte" loading="lazy"></div>
+                    <div class="service-body">
+                        <div class="service-icon blue"><i class="fas fa-truck-fast"></i></div><h3>Lavage de flotte</h3><p>Lavage de flotte de véhicules de tout genre : trailers, camions de béton, boom et pompes à béton. Tarification établie sur devis.</p>
+                        <div class="price">Sur devis</div><a href="/#contact" class="btn btn-primary">Demander un devis</a>
+                    </div>
+                </div>
             </div>
         </div>
     </section>
@@ -557,7 +564,7 @@
                 <div class="contact-form-card reveal-right">
                     <form id="formContact" novalidate>
                         <div class="form-row"><div class="form-group"><label for="c_name">Nom complet *</label><input type="text" id="c_name" required minlength="2" maxlength="100" placeholder="Votre nom"></div><div class="form-group"><label for="c_email">Email *</label><input type="email" id="c_email" required placeholder="votre@email.com"></div></div>
-                        <div class="form-row"><div class="form-group"><label for="c_phone">Téléphone *</label><input type="tel" id="c_phone" required placeholder="+1 450 123 4567"></div><div class="form-group"><label for="c_service">Service demandé *</label><select id="c_service" required><option value="" disabled selected>Sélectionnez un service</option><option>Lavage Extérieur</option><option>Lavage Intérieur</option><option>Detailing Complet</option><option>Nettoyage Moteur</option><option>Protection Cire</option><option>Forfait Confort</option><option>Forfait Premium</option><option>Nettoyage &amp; Brillance des pneus (15 $)</option><option>Soin &amp; Traitement à la cire des cuirs (45 $)</option><option>Protection carrosserie — Cire Express (30 $)</option><option>Shampoing des tapis et tissus (60 $)</option><option>Autre</option></select></div></div>
+                        <div class="form-row"><div class="form-group"><label for="c_phone">Téléphone *</label><input type="tel" id="c_phone" required placeholder="+1 450 123 4567"></div><div class="form-group"><label for="c_service">Service demandé *</label><select id="c_service" required><option value="" disabled selected>Sélectionnez un service</option><option>Lavage Extérieur</option><option>Lavage Intérieur</option><option>Detailing Complet</option><option>Nettoyage Moteur</option><option>Protection Cire</option><option>Lavage de flotte (sur devis)</option><option>Forfait Confort</option><option>Forfait Premium</option><option>Nettoyage &amp; Brillance des pneus (15 $)</option><option>Soin &amp; Traitement à la cire des cuirs (45 $)</option><option>Protection carrosserie — Cire Express (30 $)</option><option>Shampoing des tapis et tissus (60 $)</option><option>Autre</option></select></div></div>
                         <div class="form-group"><label for="c_message">Message *</label><textarea id="c_message" rows="4" required placeholder="Décrivez votre véhicule, l'emplacement, la date souhaitée..."></textarea></div>
                         <div class="form-group"><label for="c_date">Date souhaitée (optionnel)</label><input type="date" id="c_date"></div>
                         <div class="hp" aria-hidden="true"><label for="hp">Ne pas remplir</label><input type="text" id="hp" tabindex="-1" autocomplete="off"></div>
@@ -587,7 +594,7 @@
                     <div class="social-links"><a href="https://facebook.com" target="_blank" rel="noopener" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a><a href="https://instagram.com" target="_blank" rel="noopener" aria-label="Instagram"><i class="fab fa-instagram"></i></a><a href="https://wa.me/14502302509" target="_blank" rel="noopener" aria-label="WhatsApp"><i class="fab fa-whatsapp"></i></a></div>
                 </div>
                 <div class="footer-col"><h4>Liens rapides</h4><ul><li><a href="#accueil">Accueil</a></li><li><a href="#services">Services</a></li><li><a href="#tarifs">Tarifs</a></li><li><a href="#extras">Extras</a></li><li><a href="#apropos">À propos</a></li><li><a href="#contact">Contact</a></li><li><a href="/reservation">Réservation</a></li></ul></div>
-                <div class="footer-col"><h4>Services</h4><ul><li><a href="#services">Lavage Extérieur</a></li><li><a href="#services">Lavage Intérieur</a></li><li><a href="#services">Detailing Complet</a></li><li><a href="#services">Nettoyage Moteur</a></li><li><a href="#services">Protection Cire</a></li></ul></div>
+                <div class="footer-col"><h4>Services</h4><ul><li><a href="#services">Lavage Extérieur</a></li><li><a href="#services">Lavage Intérieur</a></li><li><a href="#services">Detailing Complet</a></li><li><a href="#services">Nettoyage Moteur</a></li><li><a href="#services">Protection Cire</a></li><li><a href="#services">Lavage de flotte</a></li></ul></div>
                 <div class="footer-col"><h4>Contact</h4><ul><li><i class="fas fa-envelope" style="color:var(--blue);margin-right:8px;width:16px"></i><a href="mailto:cnh4314@gmail.com">cnh4314@gmail.com</a></li><li><i class="fas fa-phone" style="color:var(--blue);margin-right:8px;width:16px"></i><a href="tel:+14502302509">+1 450 230 2509</a></li><li><i class="fas fa-map-marker-alt" style="color:var(--blue);margin-right:8px;width:16px"></i><span>Grand Montréal &amp; Laurentides</span></li></ul></div>
             </div>
             <hr class="footer-divider">
@@ -610,6 +617,7 @@
             return unit ? ' <span style="font-size:.9rem;font-weight:500;color:var(--gray-400)">' + esc(unit) + '</span>' : '';
         }
         function priceText(row) {
+            if (row.unit === 'Sur devis') return 'Sur devis';
             return (row.price_from ? 'À partir de ' : '') + money(row.price) + unitSpan(row.unit);
         }
 
