@@ -13,8 +13,17 @@
     <meta property="og:description" content="Lavage auto professionnel à domicile dans le Grand Montréal et les Laurentides. Devis gratuit en ligne.">
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://www.cnhservice.com">
-    <meta name="theme-color" content="#0ea5e9">
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='15' fill='%230ea5e9'/><text x='16' y='22' text-anchor='middle' fill='white' font-size='16' font-weight='bold' font-family='Arial'>C</text></svg>">
+    <meta name="theme-color" content="#0f172a">
+    <link rel="manifest" href="/manifest.webmanifest">
+    <link rel="icon" type="image/svg+xml" href="/icons/icon.svg">
+    <link rel="icon" type="image/png" sizes="32x32" href="/icons/icon-32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/icons/icon-16.png">
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="CNH Service">
+    <meta name="application-name" content="CNH Service">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -37,7 +46,8 @@
     <style>
         *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
         html{scroll-behavior:smooth;scroll-padding-top:70px}
-        body{font-family:'Inter',sans-serif;font-size:16px;line-height:1.6;color:#1e293b;background:#f8fafc;overflow-x:hidden}
+        html,body{max-width:100%;overflow-x:clip}
+        body{font-family:'Inter',sans-serif;font-size:16px;line-height:1.6;color:#1e293b;background:#f8fafc}
         :root{--blue:#0ea5e9;--blue-dark:#0284c7;--blue-deeper:#0369a1;--blue-light:#e0f2fe;--navy:#0f172a;--slate:#1e293b;--slate-light:#334155;--gray-100:#f1f5f9;--gray-200:#e2e8f0;--gray-300:#cbd5e1;--gray-400:#94a3b8;--gray-500:#64748b;--white:#fff;--green:#10b981;--green-dark:#059669;--red:#ef4444;--amber:#f59e0b;--shadow-sm:0 1px 3px rgba(0,0,0,.08);--shadow-md:0 4px 12px rgba(0,0,0,.1);--shadow-lg:0 10px 30px rgba(0,0,0,.12);--shadow-xl:0 20px 50px rgba(0,0,0,.15);--radius:12px;--radius-lg:16px;--transition:.3s cubic-bezier(.4,0,.2,1)}
 
         /* ── Loading Screen ── */
@@ -82,6 +92,7 @@
         .header:not(.scrolled) .nav a.active{background:rgba(255,255,255,.18);color:var(--white)}
         .nav .btn-nav{background:var(--blue);color:var(--white)!important;font-weight:600;padding:10px 22px;box-shadow:0 2px 10px rgba(14,165,233,.3)}
         .nav .btn-nav:hover{background:var(--blue-dark);box-shadow:0 4px 16px rgba(14,165,233,.4);transform:translateY(-1px)}
+        .nav .nav-install{display:none}
         .menu-toggle{display:none;background:none;border:none;font-size:1.5rem;color:var(--white);cursor:pointer;padding:8px;transition:var(--transition)}
         .header.scrolled .menu-toggle{color:var(--slate)}
 
@@ -91,6 +102,7 @@
         .hero::after{content:'';position:absolute;bottom:0;left:0;right:0;height:140px;background:linear-gradient(to top,var(--gray-100),transparent);pointer-events:none}
         .hero-content{position:relative;z-index:1;padding:120px 0 60px}
         .hero-grid{display:grid;grid-template-columns:1fr;gap:48px;align-items:center}
+        .hero-grid>*,.about-grid>*{min-width:0}
         .hero-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.1);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.2);padding:10px 22px;border-radius:50px;font-size:.85rem;font-weight:500;margin-bottom:28px;animation:fadeSlideUp .8s ease .2s both}
         .hero h1{font-size:clamp(2.2rem,5vw,3.6rem);font-weight:900;margin-bottom:20px;line-height:1.08;letter-spacing:-1px;animation:fadeSlideUp .8s ease .4s both}
         .hero h1 span{background:linear-gradient(135deg,var(--blue),#38bdf8);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
@@ -106,7 +118,7 @@
         .hero-float.tl{top:16px;left:16px}
         .hero-float.br{bottom:16px;right:16px}
         .hero-stats{display:flex;gap:20px;justify-content:center;margin-top:56px;flex-wrap:wrap;animation:fadeSlideUp .8s ease 1s both}
-        .hero-stat{text-align:center;padding:20px 26px;background:rgba(255,255,255,.08);backdrop-filter:blur(8px);border-radius:16px;border:1px solid rgba(255,255,255,.1);min-width:130px}
+        .hero-stat{text-align:center;padding:20px 26px;background:rgba(255,255,255,.08);backdrop-filter:blur(8px);border-radius:16px;border:1px solid rgba(255,255,255,.1);min-width:0;flex:1 1 110px;max-width:170px}
         .hero-stat strong{display:block;font-size:2.2rem;font-weight:900}
         .hero-stat span{font-size:.8rem;opacity:.75;margin-top:4px;display:block}
         @media(min-width:992px){
@@ -278,6 +290,43 @@
         .footer-divider{border:none;height:1px;background:rgba(255,255,255,.08);margin:28px 0}
         .footer-bottom{display:flex;flex-direction:column;gap:10px;align-items:center;text-align:center;font-size:.8rem;color:var(--gray-500)}.footer-bottom a{color:var(--gray-400);text-decoration:none;transition:color .3s}.footer-bottom a:hover{color:var(--blue)}
 
+        /* ── App Install CTA ── */
+        .app-cta{background:linear-gradient(160deg,#0b1220,#0c2c47 55%,#075985);color:var(--white);position:relative;overflow:hidden}
+        .app-cta::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 15% 30%,rgba(14,165,233,.22),transparent 55%);pointer-events:none}
+        .app-cta .container{position:relative;display:grid;grid-template-columns:1fr;gap:32px;align-items:center}
+        .app-cta-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);padding:8px 18px;border-radius:50px;font-size:.8rem;font-weight:600;margin-bottom:16px}
+        .app-cta h2{font-size:clamp(1.6rem,3.5vw,2.3rem);font-weight:900;letter-spacing:-.5px;margin-bottom:12px}
+        .app-cta p{color:rgba(255,255,255,.82);font-size:1rem;line-height:1.7;max-width:520px;margin-bottom:24px}
+        .app-cta-perks{list-style:none;margin:0 0 26px;display:grid;gap:10px}
+        .app-cta-perks li{display:flex;align-items:center;gap:10px;font-size:.92rem;color:rgba(255,255,255,.88)}
+        .app-cta-perks li i{color:var(--green);width:18px;text-align:center;flex-shrink:0}
+        .app-cta-actions{display:flex;gap:14px;flex-wrap:wrap}
+        .app-cta-note{font-size:.78rem;color:rgba(255,255,255,.55);margin-top:14px;max-width:520px}
+        .app-cta-media{display:flex;flex-direction:column;align-items:center;gap:16px}
+        .app-cta-phone{width:210px;height:400px;border-radius:34px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.18);box-shadow:0 30px 70px rgba(2,6,23,.5);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:18px;text-align:center;backdrop-filter:blur(8px)}
+        .app-cta-phone .ph-icon{width:74px;height:74px;border-radius:19px;background:linear-gradient(135deg,var(--blue),var(--blue-deeper));display:flex;align-items:center;justify-content:center;box-shadow:0 12px 30px rgba(14,165,233,.4)}
+        .app-cta-phone .ph-icon svg{width:46px;height:46px}
+        .app-cta-phone strong{font-size:.95rem;font-weight:800}
+        .app-cta-phone span{font-size:.72rem;color:rgba(255,255,255,.65);line-height:1.5}
+        .app-cta-phone .ph-badge{margin-top:6px;background:rgba(16,185,129,.15);border:1px solid rgba(16,185,129,.4);color:#6ee7b7;font-size:.68rem;font-weight:700;padding:6px 12px;border-radius:20px;letter-spacing:.4px}
+        @media(min-width:768px){.app-cta .container{grid-template-columns:1.15fr .85fr}.app-cta-actions{justify-content:flex-start}}
+
+        /* ── Install Prompt (mobile, non intrusif) ── */
+        .install-banner{position:fixed;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));z-index:1200;background:rgba(15,23,42,.97);color:var(--white);border-radius:20px;border:1px solid rgba(255,255,255,.12);box-shadow:0 20px 50px rgba(2,6,23,.45);padding:16px;display:flex;align-items:center;gap:14px;transform:translateY(calc(100% + 40px));transition:transform .5s cubic-bezier(.4,0,.2,1);backdrop-filter:blur(12px);max-width:520px;margin:0 auto}
+        .install-banner.visible{transform:translateY(0)}
+        .install-banner .ib-icon{width:46px;height:46px;border-radius:13px;background:linear-gradient(135deg,var(--blue),var(--blue-deeper));display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 8px 20px rgba(14,165,233,.35)}
+        .install-banner .ib-icon svg{width:28px;height:28px}
+        .install-banner .ib-body{flex:1;min-width:0}
+        .install-banner .ib-body strong{display:block;font-size:.9rem;font-weight:800;letter-spacing:-.2px}
+        .install-banner .ib-body span{display:block;font-size:.75rem;color:rgba(255,255,255,.65);line-height:1.45;margin-top:2px}
+        .install-banner .ib-actions{display:flex;flex-direction:column;gap:6px;align-items:stretch;flex-shrink:0}
+        .install-banner .ib-install{background:linear-gradient(135deg,var(--blue),var(--blue-dark));color:var(--white);border:none;border-radius:12px;padding:10px 18px;font-family:'Inter',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer;box-shadow:0 4px 12px rgba(14,165,233,.35);transition:transform .3s ease,box-shadow .3s ease;white-space:nowrap}
+        .install-banner .ib-install:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(14,165,233,.45)}
+        .install-banner .ib-close{background:rgba(255,255,255,.08);border:none;color:rgba(255,255,255,.7);border-radius:10px;padding:6px 10px;font-size:.72rem;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;transition:background .3s ease}
+        .install-banner .ib-close:hover{background:rgba(255,255,255,.16);color:var(--white)}
+        @media(max-width:380px){.install-banner{flex-wrap:wrap}.install-banner .ib-actions{flex-direction:row;width:100%}.install-banner .ib-install{flex:1;text-align:center}}
+        .install-banner-open .whatsapp-float,.install-banner-open .back-to-top{bottom:calc(var(--ib-h,118px) + 30px + env(safe-area-inset-bottom,0px))}
+
         /* ── Floating Elements ── */
         .back-to-top{position:fixed;bottom:28px;right:28px;width:50px;height:50px;background:linear-gradient(135deg,var(--blue),var(--blue-dark));color:var(--white);border-radius:16px;display:flex;align-items:center;justify-content:center;text-decoration:none;font-size:1.1rem;box-shadow:0 4px 16px rgba(14,165,233,.3);opacity:0;visibility:hidden;transition:all .4s cubic-bezier(.4,0,.2,1);z-index:999}.back-to-top.visible{opacity:1;visibility:visible}.back-to-top:hover{transform:translateY(-4px) scale(1.05);box-shadow:0 8px 24px rgba(14,165,233,.4)}
         .mobile-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:998;opacity:0;transition:var(--transition)}.mobile-overlay.active{opacity:1}
@@ -286,8 +335,8 @@
 
         /* ── Responsive ── */
         @media(min-width:768px){.container{padding:0 24px}.about-grid{grid-template-columns:1fr 1fr;gap:56px}.contact-grid{grid-template-columns:1fr 1fr;gap:36px}.footer-grid{grid-template-columns:2fr 1fr 1fr 1.2fr;gap:44px}.footer-bottom{flex-direction:row;justify-content:space-between}}
-        @media(max-width:900px){.menu-toggle{display:block}.nav{position:fixed;top:0;right:-100%;width:82%;max-width:340px;height:100vh;background:var(--white);transition:all .4s cubic-bezier(.4,0,.2,1);z-index:999;padding:80px 24px 32px;box-shadow:var(--shadow-xl)}.nav.active{right:0}.nav ul{flex-direction:column;gap:0}.nav li{width:100%}.nav a{display:block;padding:16px 18px;color:var(--slate);border-radius:12px;font-size:1rem}.nav a:hover{background:var(--blue-light);color:var(--blue)}.nav .btn-nav{text-align:center;margin-top:16px;color:var(--white)!important}.mobile-overlay.active{display:block}.hero h1{font-size:2.4rem}}
-        @media(max-width:480px){.hero-stats{gap:16px}.hero-stat{min-width:100px;padding:14px}.hero-stat strong{font-size:1.6rem}.services-grid,.pricing-grid{grid-template-columns:1fr}.steps{grid-template-columns:1fr}.form-row{grid-template-columns:1fr}.testimonials-grid{grid-template-columns:1fr}}
+        @media(max-width:900px){.menu-toggle{display:block}.nav{position:fixed;top:0;right:-100%;width:82%;max-width:340px;height:100vh;background:var(--white);transition:all .4s cubic-bezier(.4,0,.2,1);z-index:999;padding:80px 24px 32px;box-shadow:var(--shadow-xl)}.nav.active{right:0}.nav ul{flex-direction:column;gap:0}.nav li{width:100%}.nav a{display:block;padding:16px 18px;color:var(--slate);border-radius:12px;font-size:1rem}.nav a:hover{background:var(--blue-light);color:var(--blue)}.nav .nav-install{display:flex!important;align-items:center;gap:10px;background:linear-gradient(135deg,rgba(14,165,233,.1),rgba(14,165,233,.04));color:var(--blue)!important;font-weight:600;margin-bottom:8px}.nav .btn-nav{text-align:center;margin-top:16px;color:var(--white)!important}.mobile-overlay.active{display:block}.hero h1{font-size:2.4rem}}
+        @media(max-width:480px){.hero-stats{gap:12px}.hero-stat{flex-basis:calc(50% - 6px);max-width:none;padding:14px}.hero-stat strong{font-size:1.6rem}.services-grid,.pricing-grid{grid-template-columns:1fr}.steps{grid-template-columns:1fr}.form-row{grid-template-columns:1fr}.testimonials-grid{grid-template-columns:1fr}}
     </style>
 </head>
 <body>
@@ -316,6 +365,7 @@
                     <li><a href="#extras" class="nav-link">Extras</a></li>
                     <li><a href="#apropos" class="nav-link">À propos</a></li>
                     <li><a href="#contact" class="nav-link">Contact</a></li>
+                    <li><a href="/install" class="nav-link nav-install"><i class="fas fa-mobile-screen"></i> Installer l'app</a></li>
                     <li><a href="/reservation" class="nav-link btn-nav"><i class="fas fa-calendar-check"></i> Réserver</a></li>
                 </ul>
             </nav>
@@ -333,7 +383,7 @@
                     <p>Service de lavage auto professionnel directement chez vous, dans le Grand Montréal et les Laurentides. Rapide, éco-responsable et sans tracas.</p>
                     <div class="hero-buttons">
                         <a href="/reservation" class="btn btn-primary btn-lg"><i class="fas fa-calendar-check"></i> Réserver maintenant</a>
-                        <a href="#services" class="btn btn-outline btn-lg"><i class="fas fa-info-circle"></i> Découvrir nos services</a>
+                        <a href="/install" class="btn btn-outline btn-lg hero-install-btn"><i class="fas fa-mobile-screen-button"></i> Installer l'application</a>
                     </div>
                 </div>
                 <div class="hero-media">
@@ -471,6 +521,41 @@
         </div>
     </section>
 
+    <!-- App install CTA -->
+    <section class="section app-cta" id="application">
+        <div class="container">
+            <div class="reveal-left">
+                <div class="app-cta-badge"><i class="fas fa-mobile-screen"></i> Application officielle</div>
+                <h2>Emportez CNH SERVICE avec vous</h2>
+                <p>Installez l'application CNH SERVICE sur votre téléphone et retrouvez nos services, tarifs et réservations directement depuis votre écran d'accueil.</p>
+                <ul class="app-cta-perks">
+                    <li><i class="fas fa-circle-check"></i> Réservation d'un lavage en moins de 2 minutes</li>
+                    <li><i class="fas fa-circle-check"></i> Accès rapide aux tarifs et options</li>
+                    <li><i class="fas fa-circle-check"></i> Contact et WhatsApp en un geste</li>
+                </ul>
+                <div class="app-cta-actions">
+                    <a href="/install" class="btn btn-primary btn-lg"><i class="fas fa-mobile-screen-button"></i> Installer l'application</a>
+                    <a href="/reservation" class="btn btn-outline btn-lg">Réserver sans installer</a>
+                </div>
+                <p class="app-cta-note">Sur iPhone, l'installation se fait via Safari en 30 secondes — l'application s'ajoute à votre écran d'accueil, sans App Store.</p>
+            </div>
+            <div class="app-cta-media reveal-right">
+                <div class="app-cta-phone">
+                    <div class="ph-icon">
+                        <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M12 32V16h4v12h8v4H12z" fill="white"/>
+                            <path d="M26 32V16l10 8-10 8z" fill="white" opacity=".85"/>
+                            <circle cx="36" cy="14" r="3" fill="#7dd3fc"/>
+                        </svg>
+                    </div>
+                    <strong>CNH Service</strong>
+                    <span>Lavage Auto à Domicile<br>Grand Montréal &amp; Laurentides</span>
+                    <div class="ph-badge">ÉCRAN D'ACCUEIL</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <section class="section pricing" id="tarifs">
         <div class="container">
             <div class="section-header reveal"><div class="badge"><i class="fas fa-tag"></i> Tarifs</div><h2>Nos forfaits populaires</h2><p>Des prix clairs et compétitifs. Le forfait complet est à 120 $ à prix fixe, peu importe le type de véhicule.</p></div>
@@ -593,7 +678,7 @@
                     <p>Service de lavage auto professionnel à domicile dans le Grand Montréal et les Laurentides.</p>
                     <div class="social-links"><a href="https://facebook.com" target="_blank" rel="noopener" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a><a href="https://instagram.com" target="_blank" rel="noopener" aria-label="Instagram"><i class="fab fa-instagram"></i></a><a href="https://wa.me/14502302509" target="_blank" rel="noopener" aria-label="WhatsApp"><i class="fab fa-whatsapp"></i></a></div>
                 </div>
-                <div class="footer-col"><h4>Liens rapides</h4><ul><li><a href="#accueil">Accueil</a></li><li><a href="#services">Services</a></li><li><a href="#tarifs">Tarifs</a></li><li><a href="#extras">Extras</a></li><li><a href="#apropos">À propos</a></li><li><a href="#contact">Contact</a></li><li><a href="/reservation">Réservation</a></li></ul></div>
+                <div class="footer-col"><h4>Liens rapides</h4><ul><li><a href="#accueil">Accueil</a></li><li><a href="#services">Services</a></li><li><a href="#tarifs">Tarifs</a></li><li><a href="#extras">Extras</a></li><li><a href="#apropos">À propos</a></li><li><a href="#contact">Contact</a></li><li><a href="/reservation">Réservation</a></li><li><a href="/install">📱 Installer l'application</a></li></ul></div>
                 <div class="footer-col"><h4>Services</h4><ul><li><a href="#services">Lavage Extérieur</a></li><li><a href="#services">Lavage Intérieur</a></li><li><a href="#services">Detailing Complet</a></li><li><a href="#services">Nettoyage Moteur</a></li><li><a href="#services">Protection Cire</a></li><li><a href="#services">Lavage de flotte</a></li></ul></div>
                 <div class="footer-col"><h4>Contact</h4><ul><li><i class="fas fa-envelope" style="color:var(--blue);margin-right:8px;width:16px"></i><a href="mailto:cnh4314@gmail.com">cnh4314@gmail.com</a></li><li><i class="fas fa-phone" style="color:var(--blue);margin-right:8px;width:16px"></i><a href="tel:+14502302509">+1 450 230 2509</a></li><li><i class="fas fa-map-marker-alt" style="color:var(--blue);margin-right:8px;width:16px"></i><span>Grand Montréal &amp; Laurentides</span></li></ul></div>
             </div>
@@ -602,6 +687,128 @@
         </div>
     </footer>
 
+    <script>
+    // ── PWA : service worker + masquage des CTAs d'installation si déjà installée ──
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function() {
+            navigator.serviceWorker.register('/sw.js').catch(function() {});
+        });
+    }    (function() {
+        var standalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+        if (standalone) {
+            document.documentElement.classList.add('pwa-standalone');
+            document.addEventListener('DOMContentLoaded', function() {
+                // Déjà installée : plus d'appels à l'installation
+                var appSection = document.getElementById('application');
+                if (appSection) appSection.style.display = 'none';
+                document.querySelectorAll('.hero-install-btn, .nav-install').forEach(function(el) {
+                    el.style.display = 'none';
+                });
+            });
+            return; // jamais de bannière si l'app est déjà installée
+        }
+
+        // ── Prompt d'installation mobile (élégant, non intrusif) ──
+        // Règles : mobile uniquement, après 6 s, jamais en standalone, jamais si
+        // l'utilisateur a choisi "Plus tard" (7 jours) ou refusé l'installation.
+        var IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+                     (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+        var LATER_KEY = 'cnh_install_later_until';
+        var DISMISS_KEY = 'cnh_install_dismissed';
+
+        function canShowBanner() {
+            if (window.matchMedia('(min-width: 768px)').matches) return false;      // desktop : pas de bannière
+            if (IS_IOS && !/Safari/.test(navigator.userAgent)) return false;         // WebView iOS : bouton Partager absent
+            if (localStorage.getItem(DISMISS_KEY)) return false;                     // refus définitif
+            var later = parseInt(localStorage.getItem(LATER_KEY) || '0', 10);
+            if (later && Date.now() < later) return false;                           // "Plus tard" (7 jours)
+            return true;
+        }
+
+        var deferredPrompt = null;
+        var bannerShown = false;
+
+        function showBanner() {
+            if (bannerShown || !canShowBanner()) return;
+            var banner = document.getElementById('installBanner');
+            if (!banner) return;
+            banner.hidden = false;
+            // Laisse le temps au layout de poser la hauteur avant l'animation
+            requestAnimationFrame(function() {
+                requestAnimationFrame(function() {
+                    banner.classList.add('visible');
+                    document.documentElement.classList.add('install-banner-open');
+                    // Remonte les boutons flottants au-dessus de la bannière
+                    var h = banner.offsetHeight;
+                    document.documentElement.style.setProperty('--ib-h', h + 'px');
+                });
+            });
+            bannerShown = true;
+        }
+
+        function hideBanner(permanent) {
+            var banner = document.getElementById('installBanner');
+            if (banner) {
+                banner.classList.remove('visible');
+                setTimeout(function() { banner.hidden = true; }, 500);
+            }
+            document.documentElement.classList.remove('install-banner-open');
+            if (permanent) {
+                try { localStorage.setItem(DISMISS_KEY, '1'); } catch (e) {}
+            }
+        }
+
+        // beforeinstallprompt : disponible sur Android/Chrome → installation native
+        window.addEventListener('beforeinstallprompt', function(e) {
+            e.preventDefault();
+            deferredPrompt = e;
+            setTimeout(showBanner, 6000); // délai de 6 s après disponibilité
+        });
+
+        // iOS/autres : pas d'événement natif — la bannière guide vers /install
+        if (IS_IOS) {
+            setTimeout(showBanner, 6000);
+        }
+
+        window.addEventListener('appinstalled', function() {
+            hideBanner(false);
+            deferredPrompt = null;
+        });
+
+        document.addEventListener('DOMContentLoaded', function() {
+            var installBtn = document.getElementById('ibInstallBtn');
+            var laterBtn = document.getElementById('ibLaterBtn');
+            if (!installBtn || !laterBtn) return;
+
+            installBtn.addEventListener('click', function() {
+                if (deferredPrompt) {
+                    // Android : installation native
+                    deferredPrompt.prompt();
+                    deferredPrompt.userChoice.then(function(choice) {
+                        if (choice && choice.outcome === 'accepted') {
+                            hideBanner(false);
+                        } else {
+                            // refus utilisateur : on ne re-demandera plus
+                            try { localStorage.setItem(DISMISS_KEY, '1'); } catch (e) {}
+                            hideBanner(false);
+                        }
+                    });
+                    deferredPrompt = null;
+                } else {
+                    // iOS et navigateurs sans prompt natif : page d'instructions
+                    window.location.href = '/install';
+                }
+            });
+
+            laterBtn.addEventListener('click', function() {
+                try {
+                    localStorage.setItem(LATER_KEY, String(Date.now() + 7 * 24 * 60 * 60 * 1000));
+                } catch (e) {}
+                hideBanner(false);
+            });
+        });
+    })();
+    </script>
     <script>
     // ── Grille tarifaire pilotée par l'admin (onglet Tarifs) ──
     // Le HTML statique ci-dessus sert de contenu par défaut (SEO + repli hors ligne) ;
@@ -692,6 +899,25 @@
     <a href="https://wa.me/14502302509?text=Bonjour%20CNH%20Service%2C%20je%20souhaite%20un%20devis%20pour%20un%20lavage%20auto." target="_blank" rel="noopener" class="whatsapp-float" aria-label="WhatsApp"><i class="fab fa-whatsapp"></i></a>
     <a href="#accueil" class="back-to-top" id="backToTop" aria-label="Retour en haut"><i class="fas fa-chevron-up"></i></a>
 
+    <!-- Bannière d'installation PWA (injectée/contrôlée par JS) -->
+    <div class="install-banner" id="installBanner" role="dialog" aria-label="Installer l'application CNH Service" hidden>
+        <div class="ib-icon">
+            <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 32V16h4v12h8v4H12z" fill="white"/>
+                <path d="M26 32V16l10 8-10 8z" fill="white" opacity=".85"/>
+                <circle cx="36" cy="14" r="3" fill="#7dd3fc"/>
+            </svg>
+        </div>
+        <div class="ib-body">
+            <strong>Application CNH Service</strong>
+            <span>Installez l'app sur votre écran d'accueil — réservation en 2 minutes.</span>
+        </div>
+        <div class="ib-actions">
+            <button class="ib-install" id="ibInstallBtn" type="button">Installer</button>
+            <button class="ib-close" id="ibLaterBtn" type="button">Plus tard</button>
+        </div>
+    </div>
+
     <script>
     document.addEventListener('DOMContentLoaded',function(){
         // ── Loader ──
@@ -701,6 +927,38 @@
 
         // ── Track visit ──
         fetch('/api/stats/visit',{method:'POST',headers:{'Content-Type':'application/json'}}).catch(function(){});
+
+        // ── Coordonnées dynamiques (dashboard admin → site public) ──
+        fetch('/api/settings').then(function(r){return r.json()}).then(function(s){
+            if(!s || typeof s !== 'object') return;
+            var phoneDigits = String(s.whatsapp||'').replace(/[^0-9]/g,'');
+            var phoneDisplay = s.phone || '';
+            var email = s.email || '';
+            var hours = s.hours || '';
+            var zone = s.address || '';
+            var waMsg = s.welcome_msg || 'Bonjour CNH Service, je souhaite un devis pour un lavage auto.';
+            var waUrl = 'https://wa.me/' + phoneDigits + '?text=' + encodeURIComponent(waMsg);
+            // Bloc coordonnées
+            var mailLink = document.querySelector('#contact .contact-item a[href^="mailto:"]');
+            if (mailLink && email) { mailLink.textContent = email; mailLink.href = 'mailto:' + email; }
+            var telLink = document.querySelector('#contact .contact-item a[href^="tel:"]');
+            if (telLink && phoneDisplay) { telLink.textContent = phoneDisplay; telLink.href = 'tel:' + phoneDigits; }
+            var waLink = document.querySelector('#contact .contact-item a[href^="https://wa.me/"]');
+            if (waLink && phoneDigits) waLink.href = waUrl;
+            document.querySelectorAll('#contact .contact-item span').forEach(function(sp){
+                if (hours && /Lun-Ven/i.test(sp.textContent)) sp.textContent = hours;
+                if (zone && /Grand Montréal/i.test(sp.textContent)) sp.textContent = zone;
+            });
+            // Footer contact
+            var fMail = document.querySelector('.footer a[href^="mailto:"]');
+            if (fMail && email) { fMail.textContent = email; fMail.href = 'mailto:' + email; }
+            var fTel = document.querySelector('.footer a[href^="tel:"]');
+            if (fTel && phoneDisplay) { fTel.textContent = phoneDisplay; fTel.href = 'tel:' + phoneDigits; }
+            var fZone = document.querySelector('.footer-col span');
+            if (fZone && zone && /Grand Montréal/i.test(fZone.textContent)) fZone.textContent = zone;
+            // WhatsApp flottant + lien social
+            document.querySelectorAll('a[href^="https://wa.me/"]').forEach(function(a){ a.href = waUrl; });
+        }).catch(function(){});
 
         // ── Mobile menu ──
         var mt=document.getElementById('menuToggle'),nav=document.getElementById('nav'),ov=document.getElementById('mobileOverlay');
