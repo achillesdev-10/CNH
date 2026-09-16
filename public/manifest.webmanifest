@@ -20,6 +20,29 @@
     { "src": "/icons/icon-192-maskable.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
     { "src": "/icons/icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ],
+  "screenshots": [
+    {
+      "src": "/screenshots/accueil-desktop.webp",
+      "sizes": "1280x720",
+      "type": "image/webp",
+      "form_factor": "wide",
+      "label": "Page d'accueil de CNH Service sur ordinateur : services, forfaits et tarifs"
+    },
+    {
+      "src": "/screenshots/accueil-mobile.webp",
+      "sizes": "720x1280",
+      "type": "image/webp",
+      "form_factor": "narrow",
+      "label": "Page d'accueil de CNH Service sur téléphone, avec le bouton de réservation"
+    },
+    {
+      "src": "/screenshots/reservation-mobile.webp",
+      "sizes": "720x1280",
+      "type": "image/webp",
+      "form_factor": "narrow",
+      "label": "Page de réservation de CNH Service : choix du forfait, de la date et du créneau horaire"
+    }
+  ],
   "shortcuts": [
     {
       "name": "Réserver un lavage",
