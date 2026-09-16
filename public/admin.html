@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Admin | CNH Service</title>
     <meta name="robots" content="noindex">
     <meta name="theme-color" content="#0f172a">
@@ -134,7 +134,7 @@
         .settings-grid input:focus,.settings-grid textarea:focus{border-color:var(--blue);outline:none;background:var(--white);box-shadow:0 0 0 4px rgba(14,165,233,.1)}
 
         /* ── Toast ── */
-        .toast{position:fixed;bottom:28px;right:28px;color:var(--white);padding:14px 24px;border-radius:14px;font-size:.88rem;font-weight:600;box-shadow:0 6px 24px rgba(2,6,23,.25);transform:translateY(120px);opacity:0;transition:all .4s cubic-bezier(.4,0,.2,1);z-index:10000;display:flex;align-items:center;gap:8px;max-width:calc(100vw - 40px)}
+        .toast{position:fixed;bottom:calc(28px + env(safe-area-inset-bottom,0px));right:28px;color:var(--white);padding:14px 24px;border-radius:14px;font-size:.88rem;font-weight:600;box-shadow:0 6px 24px rgba(2,6,23,.25);transform:translateY(120px);opacity:0;transition:all .4s cubic-bezier(.4,0,.2,1);z-index:10000;display:flex;align-items:center;gap:8px;max-width:calc(100vw - 40px)}
         .toast.show{transform:translateY(0);opacity:1}
         .toast.success{background:linear-gradient(135deg,var(--green),var(--green-dark))}
         .toast.error{background:linear-gradient(135deg,var(--red),#dc2626)}

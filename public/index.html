@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>CNH Service | Lavage Auto à Domicile Professionnel | Grand Montréal</title>
     <meta name="description" content="CNH Service offre un lavage auto professionnel à domicile dans le Grand Montréal et les Laurentides. Lavage extérieur, intérieur, detailing, nettoyage moteur. Devis gratuit! ☎ +1 450 230 2509">
     <meta name="keywords" content="lavage auto domicile, lavage voiture professionnel, detailing auto, lavage extérieur intérieur, Grand Montréal, Laurentides, lavage mobile, nettoyage auto, CNH Service">
@@ -81,8 +81,8 @@
         .btn-sm{padding:8px 16px;font-size:.85rem}
 
         /* ── Header ── */
-        .header{position:fixed;top:0;left:0;width:100%;z-index:1000;transition:all .4s cubic-bezier(.4,0,.2,1);padding:14px 0;background:transparent}
-        .header.scrolled{background:rgba(255,255,255,.97);backdrop-filter:blur(20px) saturate(180%);box-shadow:0 1px 20px rgba(0,0,0,.06);padding:10px 0}
+        .header{position:fixed;top:0;left:0;width:100%;z-index:1000;transition:all .4s cubic-bezier(.4,0,.2,1);padding:14px 0;padding-top:calc(14px + env(safe-area-inset-top,0px));background:transparent}
+        .header.scrolled{background:rgba(255,255,255,.97);backdrop-filter:blur(20px) saturate(180%);box-shadow:0 1px 20px rgba(0,0,0,.06);padding:10px 0;padding-top:calc(10px + env(safe-area-inset-top,0px))}
         .header .container{display:flex;justify-content:space-between;align-items:center}
         .nav ul{display:flex;list-style:none;gap:6px;align-items:center}
         .nav a{text-decoration:none;color:var(--white);font-weight:500;font-size:.9rem;padding:8px 16px;border-radius:10px;transition:all .3s ease}
@@ -92,6 +92,9 @@
         .header:not(.scrolled) .nav a.active{background:rgba(255,255,255,.18);color:var(--white)}
         .nav .btn-nav{background:var(--blue);color:var(--white)!important;font-weight:600;padding:10px 22px;box-shadow:0 2px 10px rgba(14,165,233,.3)}
         .nav .btn-nav:hover{background:var(--blue-dark);box-shadow:0 4px 16px rgba(14,165,233,.4);transform:translateY(-1px)}
+        /* Bouton d'installation du menu : réservé au tiroir mobile (<= 900px).
+           Sur desktop, l'installation passe par le bouton flottant, plus visible
+           et sans risque de tasser le menu (6 liens + « Réserver » le remplissent déjà). */
         .nav .nav-install{display:none}
         .menu-toggle{display:none;background:none;border:none;font-size:1.5rem;color:var(--white);cursor:pointer;padding:8px;transition:var(--transition)}
         .header.scrolled .menu-toggle{color:var(--slate)}
@@ -326,16 +329,26 @@
         .install-banner .ib-close:hover{background:rgba(255,255,255,.16);color:var(--white)}
         @media(max-width:380px){.install-banner{flex-wrap:wrap}.install-banner .ib-actions{flex-direction:row;width:100%}.install-banner .ib-install{flex:1;text-align:center}}
         .install-banner-open .whatsapp-float,.install-banner-open .back-to-top{bottom:calc(var(--ib-h,118px) + 30px + env(safe-area-inset-bottom,0px))}
+        /* App déjà installée : plus aucune invitation à l'installer, où que ce soit
+           dans la page (menu, hero, section application, pied de page). */
+        .pwa-standalone a[href="/install"]{display:none!important}
 
         /* ── Floating Elements ── */
-        .back-to-top{position:fixed;bottom:28px;right:28px;width:50px;height:50px;background:linear-gradient(135deg,var(--blue),var(--blue-dark));color:var(--white);border-radius:16px;display:flex;align-items:center;justify-content:center;text-decoration:none;font-size:1.1rem;box-shadow:0 4px 16px rgba(14,165,233,.3);opacity:0;visibility:hidden;transition:all .4s cubic-bezier(.4,0,.2,1);z-index:999}.back-to-top.visible{opacity:1;visibility:visible}.back-to-top:hover{transform:translateY(-4px) scale(1.05);box-shadow:0 8px 24px rgba(14,165,233,.4)}
+        .back-to-top{position:fixed;bottom:calc(28px + env(safe-area-inset-bottom,0px));right:28px;width:50px;height:50px;background:linear-gradient(135deg,var(--blue),var(--blue-dark));color:var(--white);border-radius:16px;display:flex;align-items:center;justify-content:center;text-decoration:none;font-size:1.1rem;box-shadow:0 4px 16px rgba(14,165,233,.3);opacity:0;visibility:hidden;transition:all .4s cubic-bezier(.4,0,.2,1);z-index:999}.back-to-top.visible{opacity:1;visibility:visible}.back-to-top:hover{transform:translateY(-4px) scale(1.05);box-shadow:0 8px 24px rgba(14,165,233,.4)}
         .mobile-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:998;opacity:0;transition:var(--transition)}.mobile-overlay.active{opacity:1}
-        .whatsapp-float{position:fixed;bottom:28px;left:28px;width:60px;height:60px;background:#25d366;color:var(--white);border-radius:50%;display:flex;align-items:center;justify-content:center;text-decoration:none;font-size:1.7rem;box-shadow:0 4px 20px rgba(37,211,102,.35);z-index:999;transition:all .4s cubic-bezier(.4,0,.2,1);animation:pulse-wa 2s infinite}.whatsapp-float:hover{transform:scale(1.12);box-shadow:0 6px 28px rgba(37,211,102,.5)}
+        .whatsapp-float{position:fixed;bottom:calc(28px + env(safe-area-inset-bottom,0px));left:28px;width:60px;height:60px;background:#25d366;color:var(--white);border-radius:50%;display:flex;align-items:center;justify-content:center;text-decoration:none;font-size:1.7rem;box-shadow:0 4px 20px rgba(37,211,102,.35);z-index:999;transition:all .4s cubic-bezier(.4,0,.2,1);animation:pulse-wa 2s infinite}.whatsapp-float:hover{transform:scale(1.12);box-shadow:0 6px 28px rgba(37,211,102,.5)}
         @keyframes pulse-wa{0%,100%{box-shadow:0 4px 20px rgba(37,211,102,.35)}50%{box-shadow:0 4px 28px rgba(37,211,102,.55)}}
+        /* Bouton d'installation flottant (>= 768px) : la bannière couvre le mobile,
+           ce bouton prend le relais au-dessus. Il s'empile juste au-dessus du bouton
+           WhatsApp (bas 28px + 60px de haut) sur le même bord gauche. */
+        .install-float{display:none;position:fixed;bottom:calc(100px + env(safe-area-inset-bottom,0px));left:28px;z-index:999;align-items:center;gap:9px;padding:12px 18px;border-radius:14px;background:linear-gradient(135deg,var(--blue),var(--blue-dark));color:var(--white);text-decoration:none;font-size:.88rem;font-weight:700;box-shadow:0 6px 20px rgba(14,165,233,.45);transition:transform .3s ease,box-shadow .3s ease}
+        .install-float:hover{transform:translateY(-2px);box-shadow:0 10px 28px rgba(14,165,233,.55);color:var(--white)}
+        .install-float i{font-size:1.1rem}
+        @media(min-width:768px){.install-float{display:flex}}
 
         /* ── Responsive ── */
         @media(min-width:768px){.container{padding:0 24px}.about-grid{grid-template-columns:1fr 1fr;gap:56px}.contact-grid{grid-template-columns:1fr 1fr;gap:36px}.footer-grid{grid-template-columns:2fr 1fr 1fr 1.2fr;gap:44px}.footer-bottom{flex-direction:row;justify-content:space-between}}
-        @media(max-width:900px){.menu-toggle{display:block}.nav{position:fixed;top:0;right:-100%;width:82%;max-width:340px;height:100vh;background:var(--white);transition:all .4s cubic-bezier(.4,0,.2,1);z-index:999;padding:80px 24px 32px;box-shadow:var(--shadow-xl)}.nav.active{right:0}.nav ul{flex-direction:column;gap:0}.nav li{width:100%}.nav a{display:block;padding:16px 18px;color:var(--slate);border-radius:12px;font-size:1rem}.nav a:hover{background:var(--blue-light);color:var(--blue)}.nav .nav-install{display:flex!important;align-items:center;gap:10px;background:linear-gradient(135deg,rgba(14,165,233,.1),rgba(14,165,233,.04));color:var(--blue)!important;font-weight:600;margin-bottom:8px}.nav .btn-nav{text-align:center;margin-top:16px;color:var(--white)!important}.mobile-overlay.active{display:block}.hero h1{font-size:2.4rem}}
+        @media(max-width:900px){.menu-toggle{display:block}.nav{position:fixed;top:0;right:-100%;width:82%;max-width:340px;height:100vh;height:100dvh;background:var(--white);transition:all .4s cubic-bezier(.4,0,.2,1);z-index:999;padding:80px 24px 32px;padding-top:calc(80px + env(safe-area-inset-top,0px));padding-bottom:calc(32px + env(safe-area-inset-bottom,0px));box-shadow:var(--shadow-xl)}.nav.active{right:0}.nav ul{flex-direction:column;gap:0}.nav li{width:100%}.nav a{display:block;padding:16px 18px;color:var(--slate);border-radius:12px;font-size:1rem}.nav a:hover{background:var(--blue-light);color:var(--blue)}.nav .nav-install{display:flex!important;align-items:center;gap:10px;background:linear-gradient(135deg,rgba(14,165,233,.1),rgba(14,165,233,.04));color:var(--blue)!important;font-weight:600;margin-bottom:8px}.nav .btn-nav{text-align:center;margin-top:16px;color:var(--white)!important}.mobile-overlay.active{display:block}.hero h1{font-size:2.4rem}}
         @media(max-width:480px){.hero-stats{gap:12px}.hero-stat{flex-basis:calc(50% - 6px);max-width:none;padding:14px}.hero-stat strong{font-size:1.6rem}.services-grid,.pricing-grid{grid-template-columns:1fr}.steps{grid-template-columns:1fr}.form-row{grid-template-columns:1fr}.testimonials-grid{grid-template-columns:1fr}}
     </style>
 </head>
@@ -693,17 +706,21 @@
         window.addEventListener('load', function() {
             navigator.serviceWorker.register('/sw.js').catch(function() {});
         });
-    }    (function() {
-        var standalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+    }
+
+    (function() {
+        // Tous les modes d'affichage, pas seulement « standalone » : le manifest
+        // déclare display_override [standalone, minimal-ui, browser], donc un
+        // navigateur peut très bien ouvrir l'app en minimal-ui (voire fullscreen).
+        var standalone = ['standalone', 'minimal-ui', 'fullscreen', 'window-controls-overlay'].some(function(mode) {
+            try { return window.matchMedia('(display-mode: ' + mode + ')').matches; } catch (e) { return false; }
+        }) || navigator.standalone === true; // iOS < 16 : seule source fiable
         if (standalone) {
             document.documentElement.classList.add('pwa-standalone');
             document.addEventListener('DOMContentLoaded', function() {
                 // Déjà installée : plus d'appels à l'installation
                 var appSection = document.getElementById('application');
                 if (appSection) appSection.style.display = 'none';
-                document.querySelectorAll('.hero-install-btn, .nav-install').forEach(function(el) {
-                    el.style.display = 'none';
-                });
             });
             return; // jamais de bannière si l'app est déjà installée
         }
@@ -758,53 +775,80 @@
             }
         }
 
-        // beforeinstallprompt : disponible sur Android/Chrome → installation native
+        // Prompt natif disponible (Chrome, Edge, Samsung Internet) : on le capture
+        // pour le bouton « Installer ». Il ne déclenche PAS l'affichage — c'est le
+        // filet de sécurité ci-dessous qui garantit la bannière.
         window.addEventListener('beforeinstallprompt', function(e) {
             e.preventDefault();
             deferredPrompt = e;
-            setTimeout(showBanner, 6000); // délai de 6 s après disponibilité
         });
 
-        // iOS/autres : pas d'événement natif — la bannière guide vers /install
-        if (IS_IOS) {
+        // Affichage garanti, sans dépendre de beforeinstallprompt : cet événement
+        // n'est pas fiable. Chrome ne l'émet qu'après une heuristique d'engagement
+        // (un clic + 30 s passés sur la page) et ne le réémet jamais si l'utilisateur
+        // a déjà refusé ; Firefox ne l'implémente pas du tout. Sans ce repli, la
+        // bannière n'apparaîtrait donc jamais dans la majorité des cas.
+        // showBanner() est idempotent : si le prompt natif arrive plus tard, il n'y a
+        // pas de doublon. Le bouton utilise le prompt s'il existe, sinon /install.
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', function() { setTimeout(showBanner, 6000); });
+        } else {
             setTimeout(showBanner, 6000);
         }
 
+        // Installation confirmée par le navigateur : on la retient définitivement.
+        // Sinon la bannière réapparaîtrait dès que l'utilisateur revient sur le site
+        // dans un navigateur classique, où le mode « installé » n'est pas détectable
+        // (display-mode vaut « browser », pas « standalone »).
         window.addEventListener('appinstalled', function() {
-            hideBanner(false);
             deferredPrompt = null;
+            try { localStorage.setItem(DISMISS_KEY, '1'); } catch (e) {}
+            hideBanner(false);
         });
 
         document.addEventListener('DOMContentLoaded', function() {
+            // Installation native si un prompt est disponible. Renvoie false sinon :
+            // l'appelant garde alors son comportement par défaut (navigation vers
+            // /install, qui détaille la marche à suivre selon la plateforme).
+            function startInstall(event) {
+                if (!deferredPrompt) return false;
+                if (event && event.preventDefault) event.preventDefault();
+                var prompt = deferredPrompt;
+                deferredPrompt = null;                  // un prompt ne sert qu'une fois
+                prompt.prompt();
+                prompt.userChoice.then(function(choice) {
+                    // Accepté : l'app est installée. Refusé : l'utilisateur a tranché.
+                    // Dans les deux cas, on ne repropose plus la bannière.
+                    try { localStorage.setItem(DISMISS_KEY, '1'); } catch (e) {}
+                    hideBanner(false);
+                });
+                return true;
+            }
+
+            // Bannière mobile
             var installBtn = document.getElementById('ibInstallBtn');
+            if (installBtn) {
+                installBtn.addEventListener('click', function() {
+                    if (!startInstall()) window.location.href = '/install';
+                });
+            }
+
             var laterBtn = document.getElementById('ibLaterBtn');
-            if (!installBtn || !laterBtn) return;
+            if (laterBtn) {
+                laterBtn.addEventListener('click', function() {
+                    try {
+                        localStorage.setItem(LATER_KEY, String(Date.now() + 7 * 24 * 60 * 60 * 1000));
+                    } catch (e) {}
+                    hideBanner(false);
+                });
+            }
 
-            installBtn.addEventListener('click', function() {
-                if (deferredPrompt) {
-                    // Android : installation native
-                    deferredPrompt.prompt();
-                    deferredPrompt.userChoice.then(function(choice) {
-                        if (choice && choice.outcome === 'accepted') {
-                            hideBanner(false);
-                        } else {
-                            // refus utilisateur : on ne re-demandera plus
-                            try { localStorage.setItem(DISMISS_KEY, '1'); } catch (e) {}
-                            hideBanner(false);
-                        }
-                    });
-                    deferredPrompt = null;
-                } else {
-                    // iOS et navigateurs sans prompt natif : page d'instructions
-                    window.location.href = '/install';
-                }
-            });
-
-            laterBtn.addEventListener('click', function() {
-                try {
-                    localStorage.setItem(LATER_KEY, String(Date.now() + 7 * 24 * 60 * 60 * 1000));
-                } catch (e) {}
-                hideBanner(false);
+            // Tous les appels à l'installation (bouton flottant desktop, bouton du
+            // hero, section application, pied de page) : on déclenche l'installateur
+            // natif quand il existe, sinon le lien /install s'applique normalement —
+            // les boutons restent donc fonctionnels sans JavaScript.
+            document.querySelectorAll('a[href="/install"]').forEach(function(link) {
+                link.addEventListener('click', startInstall);
             });
         });
     })();
@@ -898,6 +942,12 @@
 
     <a href="https://wa.me/14502302509?text=Bonjour%20CNH%20Service%2C%20je%20souhaite%20un%20devis%20pour%20un%20lavage%20auto." target="_blank" rel="noopener" class="whatsapp-float" aria-label="WhatsApp"><i class="fab fa-whatsapp"></i></a>
     <a href="#accueil" class="back-to-top" id="backToTop" aria-label="Retour en haut"><i class="fas fa-chevron-up"></i></a>
+
+    <!-- Bouton d'installation flottant (desktop/tablette ; masqué une fois l'app installée) -->
+    <a href="/install" class="install-float" aria-label="Installer l'application CNH Service">
+        <i class="fas fa-mobile-screen-button"></i>
+        <span>Installer l'app</span>
+    </a>
 
     <!-- Bannière d'installation PWA (injectée/contrôlée par JS) -->
     <div class="install-banner" id="installBanner" role="dialog" aria-label="Installer l'application CNH Service" hidden>

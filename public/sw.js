@@ -6,7 +6,7 @@
  *  - /api/*, requêtes non-GET, requêtes cross-origin de données : JAMAIS
  *    mises en cache (réservations, admin, sessions, stats restent en direct)
  * ════════════════════════════════════════════════════════════ */
-var CACHE_NAME = 'cnh-static-v1';
+var CACHE_NAME = 'cnh-static-v2';
 var OFFLINE_URL = '/offline.html';
 
 // Assets pré-cachés au démarrage : uniquement du statique sans risque.
