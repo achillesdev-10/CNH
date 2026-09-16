@@ -36,6 +36,14 @@
         .btn-sm{padding:7px 14px;font-size:.8rem;border-radius:8px}
         .btn-danger{background:linear-gradient(135deg,var(--red),#dc2626);color:var(--white)}.btn-danger:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(239,68,68,.3)}
         .btn-success{background:linear-gradient(135deg,var(--green),var(--green-dark));color:var(--white)}.btn-success:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(16,185,129,.3)}
+        /* Bouton neutre réutilisable (remplace les styles inline gray) */
+        .btn-neutral{background:var(--gray-100);color:var(--slate);border:1px solid var(--gray-200)}.btn-neutral:hover{background:var(--gray-200);transform:translateY(-2px)}
+        /* Bouton icône seule (actions de tableau) */
+        .btn-icon{width:34px;height:34px;padding:0;border-radius:9px;font-size:.82rem}
+        .btn-amber{background:linear-gradient(135deg,var(--amber),#d97706);color:var(--white)}.btn-amber:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(245,158,11,.3)}
+
+        /* ── Focus visible (accessibilité clavier) ── */
+        a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid rgba(14,165,233,.45);outline-offset:2px}
 
         /* ── Login ── */
         .login-overlay{position:fixed;inset:0;background:linear-gradient(135deg,#f0f9ff 0%,#e0f2fe 50%,#f0f4f8 100%);display:flex;align-items:center;justify-content:center;z-index:2000}
@@ -72,16 +80,17 @@
 
         /* ── Stats ── */
         .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:18px;margin-bottom:28px}
-        .stat-card{background:var(--white);border-radius:var(--radius-lg);padding:22px;box-shadow:var(--shadow-sm);transition:all .3s ease;border:1px solid transparent;animation:fadeSlideUp .5s ease}
-        .stat-card:hover{transform:translateY(-4px);box-shadow:var(--shadow-md);border-color:var(--blue-light)}
+        .stat-card{background:var(--white);border-radius:var(--radius-lg);padding:22px;box-shadow:var(--shadow-sm);transition:all .3s ease;border:1px solid var(--gray-200);position:relative;overflow:hidden;animation:fadeSlideUp .5s ease}
+        .stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:currentColor;opacity:0;transition:opacity .3s ease}
+        .stat-card:hover{transform:translateY(-4px);box-shadow:var(--shadow-md);border-color:var(--gray-300)}
         .stat-card .icon{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;margin-bottom:14px;transition:transform .3s ease}
         .stat-card:hover .icon{transform:scale(1.1) rotate(-5deg)}
         .stat-card .icon.blue{background:rgba(14,165,233,.1);color:var(--blue)}
         .stat-card .icon.green{background:rgba(16,185,129,.1);color:var(--green)}
         .stat-card .icon.navy{background:rgba(15,23,42,.08);color:var(--navy)}
         .stat-card .icon.amber{background:rgba(245,158,11,.1);color:var(--amber)}
-        .stat-card strong{display:block;font-size:1.7rem;font-weight:800;color:var(--slate)}
-        .stat-card span{font-size:.8rem;color:var(--gray-400);font-weight:500}
+        .stat-card strong{display:block;font-size:1.8rem;font-weight:800;color:var(--slate);letter-spacing:-.5px;line-height:1.2}
+        .stat-card span{font-size:.78rem;color:var(--gray-400);font-weight:500;line-height:1.45;display:block;margin-top:2px}
 
         /* ── Cards ── */
         .card{background:var(--white);border-radius:var(--radius-lg);box-shadow:var(--shadow-sm);margin-bottom:22px;overflow:hidden;border:1px solid var(--gray-200);transition:box-shadow .3s ease}
@@ -97,14 +106,17 @@
         td{padding:12px 14px;border-bottom:1px solid var(--gray-100);color:var(--slate);transition:background .2s ease}
         tr:hover td{background:rgba(14,165,233,.03)}
 
-        .badge{padding:4px 12px;border-radius:20px;font-size:.75rem;font-weight:600;display:inline-block;letter-spacing:.3px}
-        .badge.new{background:rgba(14,165,233,.1);color:var(--blue)}
-        .badge.pending{background:rgba(245,158,11,.1);color:var(--amber)}
-        .badge.confirmed{background:rgba(16,185,129,.1);color:var(--green)}
-        .badge.completed{background:rgba(16,185,129,.15);color:#059669}
-        .badge.cancelled{background:rgba(239,68,68,.1);color:var(--red)}
-        .badge.in_progress{background:rgba(245,158,11,.1);color:var(--amber)}
+        .badge{padding:4px 12px 4px 9px;border-radius:20px;font-size:.75rem;font-weight:600;display:inline-flex;align-items:center;gap:6px;letter-spacing:.3px;line-height:1.4}
+        .badge::before{content:'';width:6px;height:6px;border-radius:50%;background:currentColor;flex-shrink:0}
+        .badge.new{background:rgba(14,165,233,.1);color:#0284c7}
+        .badge.pending{background:rgba(245,158,11,.12);color:#b45309}
+        .badge.confirmed{background:rgba(16,185,129,.12);color:#047857}
+        .badge.completed{background:rgba(5,150,105,.14);color:#065f46}
+        .badge.cancelled{background:rgba(239,68,68,.1);color:#b91c1c}
+        .badge.in_progress{background:rgba(245,158,11,.12);color:#b45309}
         .badge.archived{background:var(--gray-200);color:var(--gray-500)}
+        /* Pastille de compteur (sans point) */
+        .badge.count{padding:2px 10px}.badge.count::before{display:none}
 
         /* ── Chart ── */
         .chart{display:flex;align-items:flex-end;gap:8px;height:160px;padding:0 4px}
@@ -122,8 +134,23 @@
         .settings-grid input:focus,.settings-grid textarea:focus{border-color:var(--blue);outline:none;background:var(--white);box-shadow:0 0 0 4px rgba(14,165,233,.1)}
 
         /* ── Toast ── */
-        .toast{position:fixed;bottom:28px;right:28px;background:linear-gradient(135deg,var(--green),var(--green-dark));color:var(--white);padding:14px 24px;border-radius:14px;font-size:.88rem;font-weight:600;box-shadow:0 6px 24px rgba(16,185,129,.3);transform:translateY(120px);opacity:0;transition:all .4s cubic-bezier(.4,0,.2,1);z-index:9999;display:flex;align-items:center;gap:8px}
+        .toast{position:fixed;bottom:28px;right:28px;color:var(--white);padding:14px 24px;border-radius:14px;font-size:.88rem;font-weight:600;box-shadow:0 6px 24px rgba(2,6,23,.25);transform:translateY(120px);opacity:0;transition:all .4s cubic-bezier(.4,0,.2,1);z-index:10000;display:flex;align-items:center;gap:8px;max-width:calc(100vw - 40px)}
         .toast.show{transform:translateY(0);opacity:1}
+        .toast.success{background:linear-gradient(135deg,var(--green),var(--green-dark))}
+        .toast.error{background:linear-gradient(135deg,var(--red),#dc2626)}
+        .toast.info{background:linear-gradient(135deg,var(--slate),#334155)}
+
+        /* ── Modale de confirmation ── */
+        .modal-overlay{position:fixed;inset:0;background:rgba(2,6,23,.55);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:9998;padding:20px;opacity:0;visibility:hidden;transition:all .3s ease}
+        .modal-overlay.open{opacity:1;visibility:visible}
+        .modal{background:var(--white);border-radius:20px;padding:28px;width:100%;max-width:400px;box-shadow:0 24px 60px rgba(2,6,23,.3);text-align:center;transform:scale(.92) translateY(10px);transition:transform .3s cubic-bezier(.34,1.56,.64,1)}
+        .modal-overlay.open .modal{transform:scale(1) translateY(0)}
+        .modal-icon{width:64px;height:64px;border-radius:50%;margin:0 auto 16px;display:flex;align-items:center;justify-content:center;font-size:1.5rem}
+        .modal-icon.danger{background:rgba(239,68,68,.1);color:var(--red)}
+        .modal h3{font-size:1.1rem;color:var(--slate);font-weight:800;margin-bottom:8px}
+        .modal p{font-size:.88rem;color:var(--gray-500);line-height:1.6;margin-bottom:22px;word-break:break-word}
+        .modal-actions{display:flex;gap:10px;justify-content:center}
+        .modal-actions .btn{min-width:110px}
 
         .empty-state{text-align:center;padding:48px 24px;color:var(--gray-400)}
         .empty-state i{font-size:2.5rem;margin-bottom:12px;display:block;opacity:.5}
@@ -141,8 +168,21 @@
         .add-row input[type=text],.add-row input[type=number],.add-row textarea{border:2px solid var(--gray-200);border-radius:8px;padding:8px 10px;font-family:'Inter',sans-serif;font-size:.82rem;background:var(--white);color:var(--slate)}
         .add-row input:focus,.add-row textarea:focus{border-color:var(--blue);outline:none}
 
-        @media(max-width:768px){.settings-grid{grid-template-columns:1fr}.stats-grid{grid-template-columns:repeat(2,1fr)}.tabs{gap:2px}.tab{padding:9px 14px;font-size:.8rem}.main-content{padding:18px}.topbar{padding:12px 16px}.topbar-left h2{display:none}#tab-overview>div[style*="grid-template-columns:1fr 1fr"]{grid-template-columns:1fr!important}}
+        @media(max-width:768px){.settings-grid{grid-template-columns:1fr}.stats-grid{grid-template-columns:repeat(2,1fr)}.tabs{gap:2px}.tab{padding:9px 14px;font-size:.8rem}.main-content{padding:18px}.topbar{padding:12px 16px}.topbar-left h2{display:none}#tab-overview>div[style*="grid-template-columns:1fr 1fr"]{grid-template-columns:1fr!important}.modal-actions{flex-direction:column}.modal-actions .btn{width:100%}}
         @media(max-width:480px){.stats-grid{grid-template-columns:1fr}.card-body{padding:16px}}
+
+        /* ── Tableaux responsives : transformation en cartes sur mobile ── */
+        @media(max-width:640px){
+            .table-wrap table{border:none}
+            .table-wrap thead{display:none}
+            .table-wrap tr{display:block;background:var(--gray-100);border:1px solid var(--gray-200);border-radius:14px;padding:6px 14px 12px;margin-bottom:12px}
+            .table-wrap tr:hover td{background:transparent}
+            .table-wrap td{display:flex;justify-content:space-between;align-items:center;gap:12px;border-bottom:1px dashed var(--gray-200);padding:9px 2px;text-align:right}
+            .table-wrap td:last-child{border-bottom:none}
+            .table-wrap td::before{content:attr(data-label);font-size:.72rem;font-weight:700;color:var(--gray-400);text-transform:uppercase;letter-spacing:.5px;text-align:left;flex-shrink:0}
+            .table-wrap td[data-type="actions"]{justify-content:flex-end}
+            .table-wrap td[data-type="actions"]::before{content:none}
+        }
     </style>
 </head>
 <body>
@@ -184,8 +224,8 @@
             </div>
             <div class="topbar-right">
                 <span id="adminName">admin</span>
-                <a href="/" class="btn btn-sm" style="background:var(--gray-100);color:var(--slate)"><i class="fas fa-globe"></i> Site</a>
-                <button class="btn btn-sm" style="background:var(--gray-100);color:var(--slate)" id="logoutBtn"><i class="fas fa-right-from-bracket"></i></button>
+                <a href="/" class="btn btn-sm btn-neutral"><i class="fas fa-globe"></i> Site</a>
+                <button class="btn btn-sm btn-neutral" id="logoutBtn" aria-label="Déconnexion"><i class="fas fa-right-from-bracket"></i></button>
             </div>
         </div>
 
@@ -271,7 +311,7 @@
                 <div class="card">
                     <div class="card-header">
                         <h3><i class="fas fa-tags" style="color:var(--blue)"></i> Grille tarifaire</h3>
-                        <button class="btn btn-sm" style="background:var(--gray-100);color:var(--slate)" id="reloadPricing"><i class="fas fa-rotate"></i> Recharger</button>
+                        <button class="btn btn-sm btn-neutral" id="reloadPricing"><i class="fas fa-rotate"></i> Recharger</button>
                     </div>
                     <div class="card-body">
                         <p class="hint-line"><i class="fas fa-circle-info" style="color:var(--blue)"></i> Modifiez les prix, descriptions, icônes et la visibilité, puis cliquez sur ✔ pour enregistrer la ligne. Les pages publiques (accueil et réservation) se mettent à jour automatiquement. Décocher « Actif » retire l'élément du site sans le supprimer.</p>
@@ -295,7 +335,7 @@
                         </div>
                         <div style="margin-top:24px;display:flex;gap:12px">
                             <button class="btn btn-primary" id="saveSettings"><i class="fas fa-check"></i> Sauvegarder</button>
-                            <button class="btn" style="background:var(--gray-100);color:var(--slate)" id="resetSettings"><i class="fas fa-rotate-left"></i> Réinitialiser</button>
+                            <button class="btn btn-neutral" id="resetSettings"><i class="fas fa-rotate-left"></i> Réinitialiser</button>
                         </div>
                     </div>
                 </div>
@@ -303,7 +343,20 @@
         </div>
     </div>
 
-    <div class="toast" id="toast"><i class="fas fa-check-circle"></i> <span id="toastMsg"></span></div>
+    <div class="toast success" id="toast"><i class="fas fa-check-circle" id="toastIcon"></i> <span id="toastMsg"></span></div>
+
+    <!-- Modale de confirmation (actions dangereuses) -->
+    <div class="modal-overlay" id="modalOverlay" role="dialog" aria-modal="true" aria-labelledby="modalTitle" aria-describedby="modalText">
+        <div class="modal">
+            <div class="modal-icon danger" id="modalIcon"><i class="fas fa-triangle-exclamation"></i></div>
+            <h3 id="modalTitle">Confirmer</h3>
+            <p id="modalText">Êtes-vous sûr ?</p>
+            <div class="modal-actions">
+                <button class="btn btn-neutral" id="modalCancel" type="button">Annuler</button>
+                <button class="btn btn-danger" id="modalConfirm" type="button">Confirmer</button>
+            </div>
+        </div>
+    </div>
 
     <script>
     var API = '';
@@ -316,13 +369,49 @@
     var token = localStorage.getItem('cnh_token');
     var labels = { pending:'En attente', confirmed:'Confirmé', completed:'Terminé', cancelled:'Annulé', new:'Nouveau', in_progress:'En cours', archived:'Archivé' };
 
-    // ── Toast ──
-    function toast(msg) {
+    // ── Toast (typé : succès / erreur / info) ──
+    var TOAST_ICONS = { success: 'fa-check-circle', error: 'fa-circle-exclamation', info: 'fa-circle-info' };
+    var toastTimer = null;
+    function toast(msg, type) {
+        type = TOAST_ICONS[type] ? type : 'success';
         var t = document.getElementById('toast');
         document.getElementById('toastMsg').textContent = msg;
+        document.getElementById('toastIcon').className = 'fas ' + TOAST_ICONS[type];
+        t.classList.remove('success', 'error', 'info');
+        t.classList.add(type);
         t.classList.add('show');
-        setTimeout(function(){ t.classList.remove('show'); }, 3000);
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(function(){ t.classList.remove('show'); }, 3000);
     }
+
+    // ── Modale de confirmation (remplace confirm(), focus clavier géré) ──
+    var modalState = { confirmCb: null, lastFocus: null };
+    function confirmModal(text, onConfirm, title) {
+        var ov = document.getElementById('modalOverlay');
+        document.getElementById('modalTitle').textContent = title || 'Confirmer la suppression';
+        document.getElementById('modalText').textContent = text;
+        modalState.confirmCb = onConfirm;
+        modalState.lastFocus = document.activeElement;
+        ov.classList.add('open');
+        document.getElementById('modalCancel').focus();
+    }
+    function closeModal() {
+        document.getElementById('modalOverlay').classList.remove('open');
+        if (modalState.lastFocus && modalState.lastFocus.focus) modalState.lastFocus.focus();
+        modalState.confirmCb = null;
+    }
+    document.getElementById('modalCancel').addEventListener('click', closeModal);
+    document.getElementById('modalConfirm').addEventListener('click', function() {
+        var cb = modalState.confirmCb;
+        closeModal();
+        if (cb) cb();
+    });
+    document.getElementById('modalOverlay').addEventListener('click', function(e) {
+        if (e.target === this) closeModal();
+    });
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && document.getElementById('modalOverlay').classList.contains('open')) closeModal();
+    });
 
     // ── API helper ──
     function api(method, path, body) {
@@ -406,7 +495,6 @@
                 statCard('green','fa-file-lines', o.newContacts + ' / ' + o.totalContacts, 'Demandes (nouvelles / total)') +
                 statCard('navy','fa-calendar', o.pendingReservations + ' / ' + o.totalReservations, 'Réservations (en attente / total)') +
                 statCard('amber','fa-star', ratingVal, ratingLabel);
-
             // Weekly chart
             var days = ['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];
             var chartHtml = '';
@@ -428,7 +516,7 @@
             // Top services
             var svcHtml = '';
             data.topServices.forEach(function(s) {
-                svcHtml += '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--gray-100);transition:background .2s"><span style="font-size:.88rem;color:var(--slate);font-weight:500">'+s.service+'</span><span style="white-space:nowrap"><span class="badge confirmed">'+s.count+' résa</span>'+(Number(s.quotes)>0?' <span class="badge pending">'+s.quotes+' devis</span>':'')+'</span></div>';
+                svcHtml += '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--gray-100)"><span style="font-size:.88rem;color:var(--slate);font-weight:500">'+esc(s.service)+'</span><span style="white-space:nowrap"><span class="badge count confirmed">'+s.count+' résa</span>'+(Number(s.quotes)>0?' <span class="badge count pending">'+s.quotes+' devis</span>':'')+'</span></div>';
             });
             document.getElementById('topServices').innerHTML = svcHtml || '<div class="empty-state"><i class="fas fa-inbox"></i><p>Aucune donnée</p></div>';
 
@@ -453,15 +541,15 @@
         if (!list || !list.length) return '<div class="empty-state"><i class="fas fa-calendar-xmark"></i><p>Aucune réservation</p></div>';
         var html = '<table><thead><tr><th>#</th><th>Nom</th><th>Service</th>'+(full?'<th>Véhicule</th><th>Extras</th>':'')+'<th>Date</th><th>Heure</th><th>Total</th><th>Statut</th><th>Actions</th></tr></thead><tbody>';
         list.forEach(function(r) {
-            html += '<tr><td>#'+r.id+'</td><td>'+esc(r.name)+'</td><td>'+esc(r.service)+'</td>';
+            html += '<tr><td data-label="#">#'+r.id+'</td><td data-label="Nom">'+esc(r.name)+'</td><td data-label="Service">'+esc(r.service)+'</td>';
             if (full) {
-                html += '<td>'+esc(r.vehicle_type)+'</td>';
-                html += '<td style="max-width:220px" title="'+esc(r.extras || '—')+'">'+esc(r.extras || '—')+'</td>';
+                html += '<td data-label="Véhicule">'+esc(r.vehicle_type)+'</td>';
+                html += '<td data-label="Extras" style="max-width:220px" title="'+esc(r.extras || '—')+'">'+esc(r.extras || '—')+'</td>';
             }
-            html += '<td>'+r.reservation_date+'</td><td>'+r.reservation_time+'</td>';
-            html += '<td style="white-space:nowrap;font-weight:700;color:var(--blue)">'+formatTotal(r.price_total)+'</td>';
-            html += '<td><span class="badge '+r.status+'">'+(labels[r.status]||r.status)+'</span></td>';
-            html += '<td style="white-space:nowrap">';
+            html += '<td data-label="Date">'+r.reservation_date+'</td><td data-label="Heure">'+(r.reservation_time || '—')+'</td>';
+            html += '<td data-label="Total" style="white-space:nowrap;font-weight:700;color:var(--blue)">'+formatTotal(r.price_total)+'</td>';
+            html += '<td data-label="Statut"><span class="badge '+r.status+'">'+(labels[r.status]||r.status)+'</span></td>';
+            html += '<td data-type="actions" style="white-space:nowrap">';
             if (r.status === 'pending') {
                 html += '<button class="btn btn-sm btn-success" onclick="updateRes('+r.id+',\'confirmed\')"><i class="fas fa-check"></i></button> ';
                 html += '<button class="btn btn-sm btn-danger" onclick="updateRes('+r.id+',\'cancelled\')"><i class="fas fa-times"></i></button>';
@@ -476,10 +564,10 @@
 
     function updateRes(id, status) {
         api('PATCH', '/api/reservations/'+id, {status:status}).then(function() {
-            toast('Réservation mise à jour !');
+            toast('Réservation mise à jour !', 'success');
             loadReservations(document.getElementById('resFilter').value);
             loadDashboard();
-        });
+        }).catch(function() { toast('Erreur lors de la mise à jour.', 'error'); });
     }
 
     document.getElementById('resFilter').addEventListener('change', function() { loadReservations(this.value); });
@@ -506,7 +594,7 @@
             setTimeout(function() { URL.revokeObjectURL(objectUrl); }, 2000);
             toast('Export CSV téléchargé !');
         }).catch(function() {
-            toast('Export impossible.');
+            toast('Export impossible.', 'error');
         }).finally(function() {
             btn.disabled = false;
         });
@@ -520,12 +608,12 @@
             if (!list || !list.length) { document.getElementById('allContacts').innerHTML = '<div class="empty-state"><i class="fas fa-inbox"></i><p>Aucun message</p></div>'; return; }
             var html = '<table><thead><tr><th>Nom</th><th>Email</th><th>Téléphone</th><th>Service</th><th>Message</th><th>Statut</th><th>Actions</th></tr></thead><tbody>';
             list.forEach(function(c) {
-                html += '<tr><td>'+esc(c.name)+'</td><td>'+esc(c.email)+'</td><td>'+esc(c.phone)+'</td><td>'+esc(c.service)+'</td>';
-                html += '<td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+esc(c.message)+'">'+esc(c.message)+'</td>';
-                html += '<td><span class="badge '+c.status+'">'+(labels[c.status]||c.status)+'</span></td>';
-                html += '<td style="white-space:nowrap">';
-                if (c.status === 'new') html += '<button class="btn btn-sm" style="background:var(--amber);color:var(--white)" onclick="updateContact('+c.id+',\'in_progress\')"><i class="fas fa-spinner"></i></button> ';
-                if (c.status !== 'completed') html += '<button class="btn btn-sm btn-success" onclick="updateContact('+c.id+',\'completed\')"><i class="fas fa-check"></i></button>';
+                html += '<tr><td data-label="Nom">'+esc(c.name)+'</td><td data-label="Email">'+esc(c.email)+'</td><td data-label="Téléphone">'+esc(c.phone)+'</td><td data-label="Service">'+esc(c.service)+'</td>';
+                html += '<td data-label="Message" style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+esc(c.message)+'">'+esc(c.message)+'</td>';
+                html += '<td data-label="Statut"><span class="badge '+c.status+'">'+(labels[c.status]||c.status)+'</span></td>';
+                html += '<td data-type="actions" style="white-space:nowrap">';
+                if (c.status === 'new') html += '<button class="btn btn-sm btn-icon btn-amber" title="Marquer en cours" onclick="updateContact('+c.id+',\'in_progress\')"><i class="fas fa-spinner"></i></button> ';
+                if (c.status !== 'completed') html += '<button class="btn btn-sm btn-icon btn-success" title="Marquer terminé" onclick="updateContact('+c.id+',\'completed\')"><i class="fas fa-check"></i></button>';
                 html += '</td></tr>';
             });
             html += '</tbody></table>';
@@ -535,9 +623,9 @@
 
     function updateContact(id, status) {
         api('PATCH', '/api/contacts/'+id, {status:status}).then(function() {
-            toast('Message mis à jour !');
+            toast('Message mis à jour !', 'success');
             loadContacts(document.getElementById('contactFilter').value);
-        });
+        }).catch(function() { toast('Erreur lors de la mise à jour.', 'error'); });
     }
 
     document.getElementById('contactFilter').addEventListener('change', function() { loadContacts(this.value); });
@@ -555,14 +643,14 @@
             list.forEach(function(t) {
                 var stars = '';
                 for (var i = 1; i <= 5; i++) stars += i <= (t.rating || 5) ? '<i class="fas fa-star"></i>' : '<i class="far fa-star"></i>';
-                html += '<tr><td>'+esc(t.name)+'</td><td>'+esc(t.location || '—')+'</td><td style="color:var(--amber);white-space:nowrap">'+stars+'</td>';
-                html += '<td style="max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+esc(t.message)+'">'+esc(t.message)+'</td>';
-                html += '<td><span class="badge ' + (t.approved ? 'confirmed' : 'pending') + '">' + (t.approved ? 'Publié' : 'En attente') + '</span></td>';
-                html += '<td>' + (t.created_at || '').slice(0, 10) + '</td>';
-                html += '<td style="white-space:nowrap">';
+                html += '<tr><td data-label="Nom">'+esc(t.name)+'</td><td data-label="Ville">'+esc(t.location || '—')+'</td><td data-label="Note" style="color:var(--amber);white-space:nowrap">'+stars+'</td>';
+                html += '<td data-label="Message" style="max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+esc(t.message)+'">'+esc(t.message)+'</td>';
+                html += '<td data-label="Statut"><span class="badge ' + (t.approved ? 'confirmed' : 'pending') + '">' + (t.approved ? 'Publié' : 'En attente') + '</span></td>';
+                html += '<td data-label="Date">' + (t.created_at || '').slice(0, 10) + '</td>';
+                html += '<td data-type="actions" style="white-space:nowrap">';
                 if (!t.approved) html += '<button class="btn btn-sm btn-success" onclick="setReview('+t.id+',1)"><i class="fas fa-check"></i> Publier</button> ';
-                else html += '<button class="btn btn-sm" style="background:var(--gray-100);color:var(--slate)" onclick="setReview('+t.id+',0)"><i class="fas fa-eye-slash"></i> Masquer</button> ';
-                html += '<button class="btn btn-sm btn-danger" onclick="delReview('+t.id+')"><i class="fas fa-trash"></i></button>';
+                else html += '<button class="btn btn-sm btn-neutral" onclick="setReview('+t.id+',0)"><i class="fas fa-eye-slash"></i> Masquer</button> ';
+                html += '<button class="btn btn-sm btn-icon btn-danger" title="Supprimer" onclick="delReview('+t.id+')"><i class="fas fa-trash"></i></button>';
                 html += '</td></tr>';
             });
             html += '</tbody></table>';
@@ -572,18 +660,19 @@
 
     function setReview(id, approved) {
         api('PATCH', '/api/testimonials/'+id, { approved: !!approved }).then(function() {
-            toast(approved ? 'Avis publié sur le site !' : 'Avis masqué du site.');
+            toast(approved ? 'Avis publié sur le site !' : 'Avis masqué du site.', 'success');
             loadReviews(document.getElementById('reviewFilter').value);
             loadDashboard();
-        });
+        }).catch(function() { toast('Erreur lors de la mise à jour.', 'error'); });
     }
 
     function delReview(id) {
-        if (!confirm('Supprimer définitivement cet avis ?')) return;
-        api('DELETE', '/api/testimonials/'+id).then(function() {
-            toast('Avis supprimé.');
-            loadReviews(document.getElementById('reviewFilter').value);
-            loadDashboard();
+        confirmModal('Supprimer définitivement cet avis ? Cette action est irréversible.', function() {
+            api('DELETE', '/api/testimonials/'+id).then(function() {
+                toast('Avis supprimé.', 'info');
+                loadReviews(document.getElementById('reviewFilter').value);
+                loadDashboard();
+            }).catch(function() { toast('Erreur lors de la suppression.', 'error'); });
         });
     }
 
@@ -609,7 +698,7 @@
             hours: document.getElementById('setHours').value,
             address: document.getElementById('setAddress').value,
             welcome_msg: document.getElementById('setMsg').value
-        }).then(function() { toast('Paramètres sauvegardés !'); });
+        }).then(function() { toast('Paramètres sauvegardés !', 'success'); });
     });
 
     document.getElementById('resetSettings').addEventListener('click', function() {
@@ -684,8 +773,8 @@
             html += '<tr data-id="' + row.id + '">';
             fields.forEach(function(f) { html += '<td>' + priceField(row, f) + '</td>'; });
             html += '<td style="white-space:nowrap">' +
-                '<button class="btn btn-sm btn-success" onclick="savePricing(' + row.id + ', this)"><i class="fas fa-check"></i></button> ' +
-                '<button class="btn btn-sm btn-danger" onclick="delPricing(' + row.id + ')"><i class="fas fa-trash"></i></button>' +
+                '<button class="btn btn-sm btn-success" title="Enregistrer la ligne" onclick="savePricing(' + row.id + ', this)"><i class="fas fa-check"></i></button> ' +
+                '<button class="btn btn-sm btn-icon btn-danger" title="Supprimer" onclick="delPricing(' + row.id + ')"><i class="fas fa-trash"></i></button>' +
                 '</td></tr>';
         });
         html += '</tbody></table>';
@@ -723,7 +812,7 @@
             var html = '';
             PRICING_ORDER.forEach(function(cat) {
                 var catRows = pricingList.filter(function(r) { return r.category === cat; });
-                html += '<div class="pricing-section" data-category="' + cat + '"><h4>' + PRICING_META[cat].label + ' <span class="badge confirmed">' + catRows.length + '</span></h4>';
+                html += '<div class="pricing-section" data-category="' + cat + '"><h4>' + PRICING_META[cat].label + ' <span class="badge count confirmed">' + catRows.length + '</span></h4>';
                 html += '<div class="table-wrap">' + (catRows.length ? pricingRowsHtml(cat, catRows) : '<div class="empty-state" style="padding:24px"><p>Aucune ligne dans cette catégorie.</p></div>') + '</div>';
                 html += pricingAddHtml(cat);
                 html += '</div>';
@@ -738,34 +827,35 @@
         var tr = btn.closest('tr');
         var body = collectPricing(tr, row.category, false);
         api('PATCH', '/api/pricing/' + id, body).then(function(res) {
-            if (res && res.error) { toast(res.error); return; }
-            toast('Tarif enregistré — le site est à jour.');
+            if (res && res.error) { toast(res.error, 'error'); return; }
+            toast('Tarif enregistré — le site est à jour.', 'success');
             loadPricing();
-        }).catch(function() { toast('Erreur réseau.'); });
+        }).catch(function() { toast('Erreur réseau.', 'error'); });
     }
 
     function delPricing(id) {
         var row = pricingById(id);
         if (!row) return;
-        if (!confirm('Supprimer « ' + row.name + ' » de la grille tarifaire ?')) return;
-        api('DELETE', '/api/pricing/' + id).then(function() {
-            toast('Tarif supprimé.');
-            loadPricing();
-        }).catch(function() { toast('Erreur réseau.'); });
+        confirmModal('Supprimer « ' + row.name + ' » de la grille tarifaire ? Cette action est irréversible.', function() {
+            api('DELETE', '/api/pricing/' + id).then(function() {
+                toast('Tarif supprimé.', 'info');
+                loadPricing();
+            }).catch(function() { toast('Erreur réseau.', 'error'); });
+        });
     }
 
     function addPricing(category, btn) {
         var box = btn.closest('.add-row');
         var body = collectPricing(box, category, true);
         body.category = category;
-        if (!body.name || body.name.trim().length < 2) { toast('Nom requis (2 caractères minimum).'); return; }
-        if (!(body.price >= 0)) { toast('Prix invalide.'); return; }
+        if (!body.name || body.name.trim().length < 2) { toast('Nom requis (2 caractères minimum).', 'error'); return; }
+        if (!(body.price >= 0)) { toast('Prix invalide.', 'error'); return; }
         body.sort_order = 99; // à la fin de la catégorie
         api('POST', '/api/pricing', body).then(function(res) {
-            if (res && res.error) { toast(res.error); return; }
-            toast('Tarif ajouté !');
+            if (res && res.error) { toast(res.error, 'error'); return; }
+            toast('Tarif ajouté !', 'success');
             loadPricing();
-        }).catch(function() { toast('Erreur réseau.'); });
+        }).catch(function() { toast('Erreur réseau.', 'error'); });
     }
 
     document.getElementById('reloadPricing').addEventListener('click', loadPricing);
