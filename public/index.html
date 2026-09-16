@@ -311,6 +311,22 @@
         .app-cta-phone .ph-badge{margin-top:6px;background:rgba(16,185,129,.15);border:1px solid rgba(16,185,129,.4);color:#6ee7b7;font-size:.68rem;font-weight:700;padding:6px 12px;border-radius:20px;letter-spacing:.4px}
         @media(min-width:768px){.app-cta .container{grid-template-columns:1.15fr .85fr}.app-cta-actions{justify-content:flex-start}}
 
+        /* ── Install Prompt (mobile, non intrusif) ── */
+        .install-banner{position:fixed;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));z-index:1200;background:rgba(15,23,42,.97);color:var(--white);border-radius:20px;border:1px solid rgba(255,255,255,.12);box-shadow:0 20px 50px rgba(2,6,23,.45);padding:16px;display:flex;align-items:center;gap:14px;transform:translateY(calc(100% + 40px));transition:transform .5s cubic-bezier(.4,0,.2,1);backdrop-filter:blur(12px);max-width:520px;margin:0 auto}
+        .install-banner.visible{transform:translateY(0)}
+        .install-banner .ib-icon{width:46px;height:46px;border-radius:13px;background:linear-gradient(135deg,var(--blue),var(--blue-deeper));display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 8px 20px rgba(14,165,233,.35)}
+        .install-banner .ib-icon svg{width:28px;height:28px}
+        .install-banner .ib-body{flex:1;min-width:0}
+        .install-banner .ib-body strong{display:block;font-size:.9rem;font-weight:800;letter-spacing:-.2px}
+        .install-banner .ib-body span{display:block;font-size:.75rem;color:rgba(255,255,255,.65);line-height:1.45;margin-top:2px}
+        .install-banner .ib-actions{display:flex;flex-direction:column;gap:6px;align-items:stretch;flex-shrink:0}
+        .install-banner .ib-install{background:linear-gradient(135deg,var(--blue),var(--blue-dark));color:var(--white);border:none;border-radius:12px;padding:10px 18px;font-family:'Inter',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer;box-shadow:0 4px 12px rgba(14,165,233,.35);transition:transform .3s ease,box-shadow .3s ease;white-space:nowrap}
+        .install-banner .ib-install:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(14,165,233,.45)}
+        .install-banner .ib-close{background:rgba(255,255,255,.08);border:none;color:rgba(255,255,255,.7);border-radius:10px;padding:6px 10px;font-size:.72rem;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;transition:background .3s ease}
+        .install-banner .ib-close:hover{background:rgba(255,255,255,.16);color:var(--white)}
+        @media(max-width:380px){.install-banner{flex-wrap:wrap}.install-banner .ib-actions{flex-direction:row;width:100%}.install-banner .ib-install{flex:1;text-align:center}}
+        .install-banner-open .whatsapp-float,.install-banner-open .back-to-top{bottom:calc(var(--ib-h,118px) + 30px + env(safe-area-inset-bottom,0px))}
+
         /* ── Floating Elements ── */
         .back-to-top{position:fixed;bottom:28px;right:28px;width:50px;height:50px;background:linear-gradient(135deg,var(--blue),var(--blue-dark));color:var(--white);border-radius:16px;display:flex;align-items:center;justify-content:center;text-decoration:none;font-size:1.1rem;box-shadow:0 4px 16px rgba(14,165,233,.3);opacity:0;visibility:hidden;transition:all .4s cubic-bezier(.4,0,.2,1);z-index:999}.back-to-top.visible{opacity:1;visibility:visible}.back-to-top:hover{transform:translateY(-4px) scale(1.05);box-shadow:0 8px 24px rgba(14,165,233,.4)}
         .mobile-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:998;opacity:0;transition:var(--transition)}.mobile-overlay.active{opacity:1}
@@ -677,8 +693,7 @@
         window.addEventListener('load', function() {
             navigator.serviceWorker.register('/sw.js').catch(function() {});
         });
-    }
-    (function() {
+    }    (function() {
         var standalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
         if (standalone) {
             document.documentElement.classList.add('pwa-standalone');
@@ -690,7 +705,108 @@
                     el.style.display = 'none';
                 });
             });
+            return; // jamais de bannière si l'app est déjà installée
         }
+
+        // ── Prompt d'installation mobile (élégant, non intrusif) ──
+        // Règles : mobile uniquement, après 6 s, jamais en standalone, jamais si
+        // l'utilisateur a choisi "Plus tard" (7 jours) ou refusé l'installation.
+        var IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+                     (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+        var LATER_KEY = 'cnh_install_later_until';
+        var DISMISS_KEY = 'cnh_install_dismissed';
+
+        function canShowBanner() {
+            if (window.matchMedia('(min-width: 768px)').matches) return false;      // desktop : pas de bannière
+            if (IS_IOS && !/Safari/.test(navigator.userAgent)) return false;         // WebView iOS : bouton Partager absent
+            if (localStorage.getItem(DISMISS_KEY)) return false;                     // refus définitif
+            var later = parseInt(localStorage.getItem(LATER_KEY) || '0', 10);
+            if (later && Date.now() < later) return false;                           // "Plus tard" (7 jours)
+            return true;
+        }
+
+        var deferredPrompt = null;
+        var bannerShown = false;
+
+        function showBanner() {
+            if (bannerShown || !canShowBanner()) return;
+            var banner = document.getElementById('installBanner');
+            if (!banner) return;
+            banner.hidden = false;
+            // Laisse le temps au layout de poser la hauteur avant l'animation
+            requestAnimationFrame(function() {
+                requestAnimationFrame(function() {
+                    banner.classList.add('visible');
+                    document.documentElement.classList.add('install-banner-open');
+                    // Remonte les boutons flottants au-dessus de la bannière
+                    var h = banner.offsetHeight;
+                    document.documentElement.style.setProperty('--ib-h', h + 'px');
+                });
+            });
+            bannerShown = true;
+        }
+
+        function hideBanner(permanent) {
+            var banner = document.getElementById('installBanner');
+            if (banner) {
+                banner.classList.remove('visible');
+                setTimeout(function() { banner.hidden = true; }, 500);
+            }
+            document.documentElement.classList.remove('install-banner-open');
+            if (permanent) {
+                try { localStorage.setItem(DISMISS_KEY, '1'); } catch (e) {}
+            }
+        }
+
+        // beforeinstallprompt : disponible sur Android/Chrome → installation native
+        window.addEventListener('beforeinstallprompt', function(e) {
+            e.preventDefault();
+            deferredPrompt = e;
+            setTimeout(showBanner, 6000); // délai de 6 s après disponibilité
+        });
+
+        // iOS/autres : pas d'événement natif — la bannière guide vers /install
+        if (IS_IOS) {
+            setTimeout(showBanner, 6000);
+        }
+
+        window.addEventListener('appinstalled', function() {
+            hideBanner(false);
+            deferredPrompt = null;
+        });
+
+        document.addEventListener('DOMContentLoaded', function() {
+            var installBtn = document.getElementById('ibInstallBtn');
+            var laterBtn = document.getElementById('ibLaterBtn');
+            if (!installBtn || !laterBtn) return;
+
+            installBtn.addEventListener('click', function() {
+                if (deferredPrompt) {
+                    // Android : installation native
+                    deferredPrompt.prompt();
+                    deferredPrompt.userChoice.then(function(choice) {
+                        if (choice && choice.outcome === 'accepted') {
+                            hideBanner(false);
+                        } else {
+                            // refus utilisateur : on ne re-demandera plus
+                            try { localStorage.setItem(DISMISS_KEY, '1'); } catch (e) {}
+                            hideBanner(false);
+                        }
+                    });
+                    deferredPrompt = null;
+                } else {
+                    // iOS et navigateurs sans prompt natif : page d'instructions
+                    window.location.href = '/install';
+                }
+            });
+
+            laterBtn.addEventListener('click', function() {
+                try {
+                    localStorage.setItem(LATER_KEY, String(Date.now() + 7 * 24 * 60 * 60 * 1000));
+                } catch (e) {}
+                hideBanner(false);
+            });
+        });
     })();
     </script>
     <script>
@@ -782,6 +898,25 @@
 
     <a href="https://wa.me/14502302509?text=Bonjour%20CNH%20Service%2C%20je%20souhaite%20un%20devis%20pour%20un%20lavage%20auto." target="_blank" rel="noopener" class="whatsapp-float" aria-label="WhatsApp"><i class="fab fa-whatsapp"></i></a>
     <a href="#accueil" class="back-to-top" id="backToTop" aria-label="Retour en haut"><i class="fas fa-chevron-up"></i></a>
+
+    <!-- Bannière d'installation PWA (injectée/contrôlée par JS) -->
+    <div class="install-banner" id="installBanner" role="dialog" aria-label="Installer l'application CNH Service" hidden>
+        <div class="ib-icon">
+            <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 32V16h4v12h8v4H12z" fill="white"/>
+                <path d="M26 32V16l10 8-10 8z" fill="white" opacity=".85"/>
+                <circle cx="36" cy="14" r="3" fill="#7dd3fc"/>
+            </svg>
+        </div>
+        <div class="ib-body">
+            <strong>Application CNH Service</strong>
+            <span>Installez l'app sur votre écran d'accueil — réservation en 2 minutes.</span>
+        </div>
+        <div class="ib-actions">
+            <button class="ib-install" id="ibInstallBtn" type="button">Installer</button>
+            <button class="ib-close" id="ibLaterBtn" type="button">Plus tard</button>
+        </div>
+    </div>
 
     <script>
     document.addEventListener('DOMContentLoaded',function(){
