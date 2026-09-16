@@ -36,6 +36,23 @@ app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true }));
 
 app.use('/api/', rateLimit({ windowMs: 15 * 60 * 1000, max: 100, message: { error: 'Trop de requêtes.' } }));
+
+// ── Static & PWA (AVANT le static général pour contrôler les en-têtes) ──
+// Le service worker est servi sans aucun cache : un SW obsolète côté client
+// est la première cause de PWA "bloquée" après un déploiement.
+app.get('/sw.js', (req, res) => {
+  res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+  res.setHeader('Cache-Control', 'no-store');
+  res.setHeader('Service-Worker-Allowed', '/');
+  res.sendFile(path.join(__dirname, 'public', 'sw.js'));
+});
+
+// Icônes PWA : cache long (fichiers immuables en pratique)
+app.use('/icons', express.static(path.join(__dirname, 'public', 'icons'), {
+  maxAge: '30d',
+  immutable: true
+}));
+
 app.use(express.static(path.join(__dirname, 'public')));
 
 // ── Helpers ──
@@ -552,6 +569,8 @@ app.delete('/api/testimonials/:id', authMiddleware, asyncHandler(async (req, res
 
 app.get('/reservation', (req, res) => res.sendFile(path.join(__dirname, 'public', 'reservation.html')));
 app.get('/admin', (req, res) => res.sendFile(path.join(__dirname, 'public', 'admin.html')));
+app.get('/install', (req, res) => res.sendFile(path.join(__dirname, 'public', 'install.html')));
+app.get('/offline', (req, res) => res.sendFile(path.join(__dirname, 'public', 'offline.html')));
 
 // ── 404 JSON pour les routes API inconnues ──
 app.use('/api', (req, res) => res.status(404).json({ error: 'Route inconnue' }));
