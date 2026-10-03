@@ -6,7 +6,9 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node server.js",
-    "backup": "node scripts/backup-db.js"
+    "backup": "node scripts/backup-db.js",
+    "test": "node --test test/*.test.js",
+    "purge": "node scripts/purge-old-data.js"
   },
   "dependencies": {
     "@libsql/client": "^0.18.0",
@@ -16,5 +18,11 @@
     "express-rate-limit": "^7.4.0",
     "helmet": "^8.0.0",
     "sql.js": "^1.11.0"
+  },
+  "devDependencies": {
+    "supertest": "^7.0.0"
+  },
+  "engines": {
+    "node": ">=20"
   }
 }

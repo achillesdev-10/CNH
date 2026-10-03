@@ -251,10 +251,13 @@
                 <div class="form-group"><label>Plaque d'immatriculation (optionnel)</label><input type="text" id="r_plate" placeholder="ABC 1234"></div>
                 <div class="form-row">
                     <div class="form-group"><label class="required">Adresse</label><input type="text" id="r_address" required placeholder="123 Rue Principale"></div>
-                    <div class="form-group"><label class="required">Ville</label><input type="text" id="r_city" required placeholder="Montréal"></div>
+                    <div class="form-group"><label class="required">Ville</label><input type="text" id="r_city" required placeholder="Longueuil"></div>
                 </div>
                 <div class="form-group"><label>Code postal (optionnel)</label><input type="text" id="r_postal" placeholder="H1A 1A1"></div>
                 <div class="form-group"><label>Notes ou demandes spéciales (optionnel)</label><textarea id="r_notes" rows="3" placeholder="Ex: stationnement, accès, préférences..."></textarea></div>
+
+                <div class="form-group"><label><input type="checkbox" id="r_consent" required> J'accepte la <a href="/confidentialite">Politique de confidentialité</a> et le traitement de mes données *</label></div>
+                <div class="hp" aria-hidden="true"><label for="hpRes">Ne pas remplir</label><input type="text" id="hpRes" tabindex="-1" autocomplete="off"></div>
 
                 <div class="form-group extras-block">
                     <label>Options &amp; soins esthétiques <span style="font-weight:500;color:var(--gray-400)">(sur demande)</span></label>
@@ -393,11 +396,11 @@
         document.getElementById('topBar').classList.toggle('scrolled', window.scrollY > 10);
     });
 
-    // ── Petits utilitaires ──
-    function escHtml(s) { var d = document.createElement('div'); d.textContent = s == null ? '' : String(s); return d.innerHTML; }
+// ── Petits utilitaires ──
+    function escHtml(s) { var d = document.createElement('div'); d.textContent = s == null ? '' : String(s); return d.innerHTML.replace(/"/g, '"').replace(/'/g, '''); }
     function escAttr(s) {
-        return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/"/g, '&quot;')
-            .replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        return String(s == null ? '' : s).replace(/&/g, '&').replace(/"/g, '"')
+            .replace(/'/g, ''').replace(/</g, '<').replace(/>/g, '>');
     }
     function fmtPrice(v) {
         var n = Number(v);
@@ -640,7 +643,8 @@
                 postal_code: document.getElementById('r_postal').value.trim() || null,
                 date: selected.date, time: selected.time || null,
                 notes: document.getElementById('r_notes').value.trim() || null,
-                extras: selected.extras.length ? selected.extras.join(', ') : null
+                extras: selected.extras.length ? selected.extras.join(', ') : null,
+                hp: document.getElementById('hpRes').value.trim()
             })
         }).then(function(r){ return r.json(); })
         .then(function(data) {

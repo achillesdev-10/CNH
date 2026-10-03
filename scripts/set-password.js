@@ -45,6 +45,16 @@ function promptHidden(query) {
     const stdin = process.stdin;
     const stdout = process.stdout;
     let input = '';
+    // Check if stdin is a TTY
+    if (!stdin.isTTY) {
+      // Non-interactive mode: read from stdin directly
+      let data = '';
+      stdin.on('data', chunk => { data += chunk; });
+      stdin.on('end', () => {
+        resolve(data.trim());
+      });
+      return;
+    }
     stdin.resume();
     stdin.setRawMode(true);
     stdin.setEncoding('utf8');
@@ -72,15 +82,15 @@ function promptHidden(query) {
 (async () => {
   let password = ENV_PASSWORD;
   if (!password) {
-    password = await promptHidden('Nouveau mot de passe (min. 8 caractères) : ');
+    password = await promptHidden('Nouveau mot de passe (min. 12 caractères) : ');
     const confirm = await promptHidden('Confirmer le mot de passe : ');
     if (password !== confirm) {
       console.error('❌ Les deux saisies ne correspondent pas.');
       process.exit(1);
     }
   }
-  if (password.length < 8) {
-    console.error('❌ Le mot de passe doit contenir au moins 8 caractères.');
+  if (password.length < 12) {
+    console.error('❌ Le mot de passe doit contenir au moins 12 caractères.');
     process.exit(1);
   }
 

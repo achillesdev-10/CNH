@@ -27,12 +27,22 @@ npm start
 │   └── nginx-cnh.conf # Exemple de reverse proxy Nginx
 ├── scripts/
 │   ├── backup-db.js   # Sauvegarde DB + rétention (npm run backup)
-│   └── set-password.js# Changer le mot de passe admin (local ou Turso)
+│   ├── set-password.js# Changer le mot de passe admin (local ou Turso)
+│   └── purge-old-data.js # Purge données anciennes Loi 25 (npm run purge)
+├── mailer.js          # Module d'envoi d'emails (Resend/Brevo)
+├── test/
+│   └── audit.test.js  # Tests sécurité & conformité (npm test)
 ├── cnh_service.db     # Base de données locale (auto-générée, hors Vercel)
 ├── public/
 │   ├── index.html     # Site principal
 │   ├── reservation.html  # Page de réservation avec calendrier
-│   └── admin.html     # Dashboard admin protégé
+│   ├── admin.html     # Dashboard admin protégé
+│   ├── install.html   # Page installation PWA
+│   ├── offline.html   # Page hors connexion
+│   ├── confidentialite.html # Politique de confidentialité (Loi 25)
+│   ├── conditions.html     # Conditions d'utilisation
+│   ├── robots.txt     # Robots.txt pour SEO
+│   └── sitemap.xml    # Sitemap XML pour SEO
 └── README.md
 ```
 
@@ -42,16 +52,20 @@ npm start
 |-------|--------|
 | URL | http://localhost:3000/admin |
 | Utilisateur | `admin` |
-| Mot de passe | **défini par vous** — voir `scripts/set-password.js` |
+| Mot de passe | **défini via `ADMIN_INITIAL_PASSWORD`** — voir `scripts/set-password.js` |
 
-> ⚠️ À la première installation, le script de seed crée le compte `admin` avec un
-> mot de passe par défaut **`cnh2026`** si aucun admin n'existe. **Changez-le
-> immédiatement avant toute mise en production** :
+> ⚠️ **Sécurité** : À la première installation, **aucun admin n'est créé automatiquement**.
+> Définissez la variable d'environnement `ADMIN_INITIAL_PASSWORD` (minimum **12 caractères**)
+> avant le premier démarrage pour créer le compte initial.
+>
+> Si un compte admin existe déjà avec le mot de passe par défaut historique (`cnh2026`),
+> la connexion est bloquée au démarrage avec un message explicite.
+> Lancez immédiatement :
 >
 > ```bash
 > node scripts/set-password.js            # saisie interactive (masquée)
 > # ou sans interaction (CI) :
-> ADMIN_PASSWORD='...' node scripts/set-password.js
+> ADMIN_PASSWORD='motdepasse12caracteres' node scripts/set-password.js
 > ```
 >
 > Le script fonctionne aussi bien sur la base locale (`cnh_service.db`) que sur
@@ -207,7 +221,36 @@ Conseils :
 - Sauvegarder aussi le dossier sur un stockage externe (ex. rsync hebdomadaire de `backups/`)
 - Cron s'exécute avec la base au repos la nuit : la copie est fiable même sans arrêter PM2
 
-### 6. Vérifications finales
+Conseils :
+- Vérifier régulièrement `tail -f logs/backup.log` (ligne `Backup OK : ...`)
+- Pour une rétention de 90 jours : `--keep 90`
+- Sauvegarder aussi le dossier sur un stockage externe (ex. rsync hebdomadaire de `backups/`)
+- Cron s'exécute avec la base au repos la nuit : la copie est fiable même sans arrêter PM2
+
+### 6. Tests & Purge (Loi 25)
+
+**Tests unitaires** (sécurité, validation, XSS, consentement, CSP, etc.) :
+```bash
+npm test
+```
+Nécessite `ADMIN_INITIAL_PASSWORD` (>=12 chars) défini dans l'environnement.
+
+**Purge des données anciennes** (Loi 25, rétention paramétrable) :
+```bash
+# Mode dry-run (défaut) — affiche ce qui serait purgé
+npm run purge
+
+# Exécution réelle — purge les données > 36 mois (défaut)
+npm run purge -- --execute
+
+# Rétention personnalisée (ex. 24 mois)
+npm run purge -- --months 24 --execute
+
+# Tables spécifiques
+npm run purge -- --tables contacts,reservations --execute
+```
+
+### 7. Vérifications finales
 - Ouvrir `https://www.cnhservice.com` et `/admin`
 - Si vous fixez `CORS_ORIGIN` dans `.env`, seuls ces domaines sont autorisés via l'API
 - Firewall : n'ouvrir que les ports 80 et 443 (le port Node reste interne)
@@ -229,8 +272,14 @@ turso db tokens create cnh-service   # récupérer le token d'accès
 2. Ajouter les variables d'environnement :
    - `TURSO_DATABASE_URL` → l'URL `libsql://...` de la base
    - `TURSO_AUTH_TOKEN` → le token généré
-   - (optionnel) `CORS_ORIGIN` → ex. `https://www.cnhservice.com`
+   - `ADMIN_INITIAL_PASSWORD` → mot de passe admin initial (**>=12 caractères**, requis au premier déploiement)
+   - `CORS_ORIGIN` → ex. `https://cnhservices.ca,https://www.cnhservices.ca`
+   - `MAIL_PROVIDER` → `resend` ou `brevo` (pour notifications email)
+   - `MAIL_API_KEY` → clé API du fournisseur d'emails
+   - `MAIL_FROM` → ex. `CNH Service <noreply@cnhservices.ca>`
+   - `NOTIFY_TO` → email destinataire des notifications admin (ex. propriétaire)
+   - `NOTIFY_TO_NAME` → nom affiché pour le destinataire
 3. Déployer. `vercel.json` route toutes les requêtes vers `server.js` (les sessions et les données vivent dans Turso, pas sur le filesystem).
-4. Ouvrir `https://<projet>.vercel.app/admin` — connectez-vous avec le compte `admin` créé au premier démarrage, puis **changez immédiatement le mot de passe** avec `node scripts/set-password.js` (en définissant `TURSO_DATABASE_URL` / `TURSO_AUTH_TOKEN` pour viser la base Turso).
+4. Ouvrir `https://<projet>.vercel.app/admin` — connectez-vous avec le compte `admin` créé au premier démarrage (mot de passe = `ADMIN_INITIAL_PASSWORD`), puis **changez immédiatement le mot de passe** avec `node scripts/set-password.js` (en définissant `TURSO_DATABASE_URL` / `TURSO_AUTH_TOKEN` pour viser la base Turso).
 
 > Les fichiers `cnh_service.db`, `backups/` et le script `scripts/backup-db.js` ne servent qu'en mode local/VPS : sur Vercel, les sauvegardes sont gérées par Turso.

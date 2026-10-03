@@ -1,0 +1,65 @@
+name: CI
+
+on:
+  push:
+    branches: [main, fix/**]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Run tests
+        run: npm test
+        env:
+          ADMIN_INITIAL_PASSWORD: TestPassword123!
+          NODE_ENV: test
+      
+      - name: Run npm audit
+        run: npm audit --audit-level=high
+        continue-on-error: false
+      
+      - name: Check for secrets in code
+        run: |
+          if grep -r "TURSO_AUTH_TOKEN\|cnh2026\|eyJ" --include="*.js" --include="*.json" --include="*.html" . | grep -v node_modules | grep -v ".git"; then
+            echo "❌ Potential secrets found in code!"
+            exit 1
+          fi
+          echo "✅ No secrets detected in code"
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: Check syntax
+        run: |
+          node --check server.js
+          node --check database.js
+          node --check scripts/set-password.js
+          node --check scripts/backup-db.js
+          node --check scripts/purge-old-data.js
+          node --check mailer.js
+      
+      - name: Validate JSON files
+        run: |
+          node -e "JSON.parse(require('fs').readFileSync('package.json'))"
+          node -e "JSON.parse(require('fs').readFileSync('package-lock.json'))"
+          node -e "JSON.parse(require('fs').readFileSync('public/manifest.webmanifest'))"

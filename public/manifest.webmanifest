@@ -1,7 +1,7 @@
 {
   "name": "CNH Service",
   "short_name": "CNH Service",
-  "description": "Service de lavage automobile professionnel à domicile — Grand Montréal & Laurentides. Réservez votre lavage, consultez nos services et tarifs directement depuis l'application.",
+  "description": "Service de lavage automobile professionnel à domicile — Grand Montréal & Rive-Sud. Réservez votre lavage, consultez nos services et tarifs directement depuis l'application.",
   "id": "/",
   "start_url": "/?source=pwa",
   "scope": "/",
@@ -55,7 +55,7 @@
       "name": "Nous contacter",
       "short_name": "Contact",
       "description": "Formulaire de contact et coordonnées",
-      "url": "/#contact?source=pwa",
+      "url": "/?source=pwa#contact",
       "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
     }
   ]

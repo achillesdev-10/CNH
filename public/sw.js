@@ -3,10 +3,10 @@
  *  - Navigations (pages HTML) : network-first, repli cache, puis /offline.html
  *  - Assets statiques (icônes, manifest, CSS/JS CDN, fonts, images) :
  *    stale-while-revalidate
- *  - /api/*, requêtes non-GET, requêtes cross-origin de données : JAMAIS
+ *  - /api/*, /admin/*, requêtes non-GET, requêtes cross-origin de données : JAMAIS
  *    mises en cache (réservations, admin, sessions, stats restent en direct)
  * ════════════════════════════════════════════════════════════ */
-var CACHE_NAME = 'cnh-static-v2';
+var CACHE_NAME = 'cnh-static-v3';
 var OFFLINE_URL = '/offline.html';
 
 // Assets pré-cachés au démarrage : uniquement du statique sans risque.
@@ -53,7 +53,7 @@ function isStaticAsset(request) {
     // les réponses cross-origin de données ne sont pas concernées (API jamais fetchée cross-origin ici).
     return /fonts\.(googleapis|gstatic)\.com|cdnjs\.cloudflare\.com|images\.unsplash\.com/.test(url.hostname);
   }
-  if (url.pathname.startsWith('/api/')) return false; // données dynamiques : jamais cachées
+  if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/admin')) return false; // données dynamiques + admin : jamais cachées
   return /\.(png|jpg|jpeg|webp|svg|ico|css|js|woff2?|webmanifest)$/.test(url.pathname) ||
          url.pathname.startsWith('/icons/');
 }
@@ -77,13 +77,22 @@ function staleWhileRevalidate(request) {
 
 // Network-first avec repli offline pour les navigations (HTML).
 function networkFirstNavigation(request) {
+  var url = new URL(request.url);
+  var skipCache = url.pathname.startsWith('/admin');
   return fetch(request).then(function(response) {
-    if (response && response.ok) {
+    if (response && response.ok && !skipCache) {
       var copy = response.clone();
       caches.open(CACHE_NAME).then(function(cache) { cache.put(request, copy).catch(function() {}); });
     }
     return response;
   }).catch(function() {
+    if (skipCache) {
+      return new Response(
+        '<!doctype html><html lang="fr"><meta charset="utf-8"><title>Hors connexion — CNH Service</title>' +
+        '<body style="font-family:sans-serif;text-align:center;padding:48px">' +
+        '<h1>Vous êtes hors connexion</h1><p>Vérifiez votre connexion puis réessayez.</p></body>',
+        { headers: { 'Content-Type': 'text/html; charset=utf-8' } });
+    }
     return caches.match(request).then(function(cached) {
       if (cached) return cached;
       return caches.match(OFFLINE_URL).then(function(offline) {

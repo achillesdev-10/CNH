@@ -1,0 +1,11 @@
+# robots.txt for CNH Service
+User-agent: *
+Disallow: /admin
+Disallow: /api/
+Disallow: /install
+Disallow: /offline
+Disallow: /reservation
+Disallow: /#contact
+
+# Sitemap
+Sitemap: https://cnhservices.ca/sitemap.xml

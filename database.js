@@ -151,18 +151,38 @@ const DEFAULT_SETTINGS = {
   phone: '+1 450 230 2509',
   whatsapp: '14502302509',
   hours: 'Lun-Ven: 8h–18h | Sam: 9h–16h | Dim: Sur rendez-vous',
-  address: 'Grand Montréal & Laurentides',
+  address: 'Grand Montréal & Rive-Sud',
   welcome_msg: 'Bonjour CNH Service, je souhaite un devis pour un lavage auto.',
-  site_title: 'CNH Service | Lavage Auto à Domicile'
+  site_title: 'CNH Service | Lavage Auto à Domicile',
+  time_slots: '08:00,09:00,10:00,11:00,12:00,13:00,14:00,15:00,16:00,17:00',
+  service_cities: 'Longueuil,Brossard,Saint-Lambert,Boucherville,Saint-Bruno-de-Montarville,La Prairie,Candiac,Chambly',
+  facebook_url: 'https://web.facebook.com/cnhservices',
+  instagram_url: ''
 };
+
+const DEFAULT_ADMIN_PASSWORD_HASH = '$2a$10$XQwYQbQbQbQbQbQbQbQbQeQbQbQbQbQbQbQbQbQbQbQbQbQbQbQb'; // bcrypt hash of 'cnh2026' - used only for detection
 
 // sql.js (sync) seeding
 function seedLocal() {
-  const adminCheck = db.exec("SELECT id FROM admin_users WHERE username = 'admin'");
+  const adminCheck = db.exec("SELECT id, password_hash FROM admin_users WHERE username = 'admin'");
   if (!adminCheck.length || !adminCheck[0].values.length) {
-    const hash = bcrypt.hashSync('cnh2026', 10);
-    db.run("INSERT INTO admin_users (username, password_hash) VALUES (?, ?)", ['admin', hash]);
-    console.log('✅ Default admin created (admin / cnh2026)');
+    const initialPassword = process.env.ADMIN_INITIAL_PASSWORD;
+    if (initialPassword) {
+      if (initialPassword.length < 12) {
+        console.error('❌ ADMIN_INITIAL_PASSWORD doit contenir au moins 12 caractères');
+        process.exit(1);
+      }
+      const hash = bcrypt.hashSync(initialPassword, 10);
+      db.run("INSERT INTO admin_users (username, password_hash) VALUES (?, ?)", ['admin', hash]);
+      console.log('✅ Admin créé avec le mot de passe initial depuis ADMIN_INITIAL_PASSWORD');
+    } else {
+      console.warn('⚠️  Aucun admin existant et ADMIN_INITIAL_PASSWORD non défini — aucun admin créé. Définissez ADMIN_INITIAL_PASSWORD (>=12 caractères) pour créer le compte initial.');
+    }
+  } else {
+    const existingHash = adminCheck[0].values[0][1];
+    if (bcrypt.compareSync('cnh2026', existingHash)) {
+      console.warn('⚠️  ATTENTION : Le compte admin utilise encore le mot de passe par défaut "cnh2026". Bloquez la connexion et lancez : node scripts/set-password.js');
+    }
   }
   const settingsCheck = db.exec("SELECT COUNT(*) as c FROM settings");
   if (settingsCheck[0].values[0][0] === 0) {
@@ -174,13 +194,28 @@ function seedLocal() {
 
 // Turso (async) seeding — idempotent, safe to run on every cold start
 async function seedTurso() {
-  const admin = await client.execute({ sql: "SELECT id FROM admin_users WHERE username = 'admin'" });
+  const admin = await client.execute({ sql: "SELECT id, password_hash FROM admin_users WHERE username = 'admin'" });
   if (!admin.rows.length) {
-    const hash = bcrypt.hashSync('cnh2026', 10);
-    await client.execute({
-      sql: "INSERT INTO admin_users (username, password_hash) VALUES (?, ?)",
-      args: ['admin', hash]
-    });
+    const initialPassword = process.env.ADMIN_INITIAL_PASSWORD;
+    if (initialPassword) {
+      if (initialPassword.length < 12) {
+        console.error('❌ ADMIN_INITIAL_PASSWORD doit contenir au moins 12 caractères');
+        process.exit(1);
+      }
+      const hash = bcrypt.hashSync(initialPassword, 10);
+      await client.execute({
+        sql: "INSERT INTO admin_users (username, password_hash) VALUES (?, ?)",
+        args: ['admin', hash]
+      });
+      console.log('✅ Admin créé avec le mot de passe initial depuis ADMIN_INITIAL_PASSWORD');
+    } else {
+      console.warn('⚠️  Aucun admin existant et ADMIN_INITIAL_PASSWORD non défini — aucun admin créé. Définissez ADMIN_INITIAL_PASSWORD (>=12 caractères) pour créer le compte initial.');
+    }
+  } else {
+    const existingHash = admin.rows[0].password_hash;
+    if (bcrypt.compareSync('cnh2026', existingHash)) {
+      console.warn('⚠️  ATTENTION : Le compte admin utilise encore le mot de passe par défaut "cnh2026". Bloquez la connexion et lancez : node scripts/set-password.js');
+    }
   }
   const count = await client.execute({ sql: 'SELECT COUNT(*) as c FROM settings' });
   if (Number(count.rows[0].c) === 0) {
@@ -223,6 +258,28 @@ async function migrate() {
   await addColumnIfMissing('reservations', 'extras', 'TEXT');
   await addColumnIfMissing('reservations', 'price_total', 'REAL');
   await addColumnIfMissing('reservations', 'vehicle_surcharge', 'REAL');
+  await addColumnIfMissing('contacts', 'consent_at', 'TEXT');
+  await addColumnIfMissing('reservations', 'consent_at', 'TEXT');
+  await addColumnIfMissing('testimonials', 'consent_at', 'TEXT');
+}
+
+async function migrateIndexes() {
+  // Partial unique index on (reservation_date, reservation_time) for pending/confirmed excluding 'À convenir'
+  // SQLite supports WHERE clause in CREATE UNIQUE INDEX
+  const indexSql = `CREATE UNIQUE INDEX IF NOT EXISTS idx_reservations_date_time_unique 
+    ON reservations(reservation_date, reservation_time) 
+    WHERE status IN ('pending','confirmed') AND reservation_time != 'À convenir'`;
+  try {
+    if (usingTurso()) {
+      await client.execute({ sql: indexSql });
+    } else {
+      db.run(indexSql);
+      saveDatabase();
+    }
+    console.log('✅ Migration : index unique partiel sur reservations(date, time) créé');
+  } catch (err) {
+    console.warn('⚠️  Migration index unique partiel ignorée :', err.message);
+  }
 }
 
 // ── Grille tarifaire (seed unique, éditable ensuite via l'admin) ─
@@ -317,6 +374,34 @@ async function migratePricingRows() {
   for (const row of PRICING_MIGRATION_ROWS) await ensurePricingRow(row);
 }
 
+// Migration: update settings.address if it contains 'Laurentides' but hasn't been manually changed
+async function migrateAddressLaurentides() {
+  const current = await dbScalar('SELECT value AS v FROM settings WHERE key = ?', ['address']);
+  if (current && String(current).includes('Laurentides')) {
+    // Check if a migration flag exists to avoid overwriting manual edits
+    const flag = await dbScalar('SELECT value AS v FROM settings WHERE key = ?', ['migration_address_rive_sud_done']);
+    if (!flag) {
+      await dbRun("UPDATE settings SET value = ?, updated_at = datetime('now') WHERE key = ?", ['Grand Montréal & Rive-Sud', 'address']);
+      await dbRun("INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)", ['migration_address_rive_sud_done', 'done']);
+      console.log('✅ Migration : settings.address mis à jour vers « Grand Montréal & Rive-Sud »');
+    }
+  }
+}
+
+// Migration: initialize facebook_url if missing
+async function migrateSocialUrls() {
+  const fb = await dbScalar('SELECT value AS v FROM settings WHERE key = ?', ['facebook_url']);
+  if (!fb) {
+    await dbRun("INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)", ['facebook_url', 'https://web.facebook.com/cnhservices']);
+    console.log('✅ Migration : facebook_url initialisé');
+  }
+  const ig = await dbScalar('SELECT value AS v FROM settings WHERE key = ?', ['instagram_url']);
+  if (!ig) {
+    await dbRun("INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)", ['instagram_url', '']);
+    console.log('✅ Migration : instagram_url initialisé (vide)');
+  }
+}
+
 // ── Init ───────────────────────────────────────────────────────
 async function initDatabase() {
   if (initPromise) return initPromise;
@@ -329,9 +414,12 @@ async function initDatabase() {
       });
       for (const sql of SCHEMA) await client.execute({ sql });
       await migrate();
+      await migrateIndexes();
       await seedTurso();
       await seedPricing();
       await migratePricingRows();
+      await migrateAddressLaurentides();
+      await migrateSocialUrls();
       console.log('✅ Turso database ready');
       return client;
     }
@@ -351,9 +439,12 @@ async function initDatabase() {
 
     for (const sql of SCHEMA) db.run(sql);
     await migrate();
+    await migrateIndexes();
     seedLocal();
     await seedPricing();
     await migratePricingRows();
+    await migrateAddressLaurentides();
+    await migrateSocialUrls();
     saveDatabase();
     console.log('✅ Local SQLite database initialized');
     return db;

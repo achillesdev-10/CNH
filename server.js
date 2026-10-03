@@ -7,9 +7,11 @@ const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 const { initDatabase, queryAll, queryOne, runSql } = require('./database');
+const { notifyNewReservation, notifyNewContact, sendClientConfirmation } = require('./mailer');
 
 // ── Optional .env loader (no dependency) ──
 (function loadEnv() {
+  if (process.env.NODE_ENV === 'test') return; // Skip .env in test mode
   const envPath = path.join(__dirname, '.env');
   if (!fs.existsSync(envPath)) return;
   fs.readFileSync(envPath, 'utf8').split(/\r?\n/).forEach(line => {
@@ -28,14 +30,66 @@ const { initDatabase, queryAll, queryOne, runSql } = require('./database');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Trust proxy for correct IP detection behind Vercel/ngingx
+app.set('trust proxy', 1);
+
 // ── Security ──
-app.use(helmet({ contentSecurityPolicy: false, crossOriginEmbedderPolicy: false }));
-const corsOrigin = process.env.CORS_ORIGIN;
-app.use(cors(corsOrigin ? { origin: corsOrigin.split(',').map(s => s.trim()) } : {}));
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "https://cdnjs.cloudflare.com", "https://cdn.jsdelivr.net"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://cdnjs.cloudflare.com"],
+      fontSrc: ["'self'", "https://fonts.gstatic.com", "https://cdnjs.cloudflare.com"],
+      imgSrc: ["'self'", "data:", "https://images.unsplash.com", "https://*.unsplash.com"],
+      connectSrc: ["'self'"],
+      frameSrc: ["'none'"],
+      objectSrc: ["'none'"],
+      baseUri: ["'self'"],
+      formAction: ["'self'"],
+      frameAncestors: ["'none'"]
+    }
+  },
+  crossOriginEmbedderPolicy: false,
+  referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
+  permissionsPolicy: { features: { camera: [], microphone: [], geolocation: [] } }
+}));
+
+const corsOrigin = process.env.CORS_ORIGIN || 'https://cnhservices.ca,https://www.cnhservices.ca';
+app.use(cors({ origin: corsOrigin.split(',').map(s => s.trim()) }));
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true }));
 
+// Global rate limiter
 app.use('/api/', rateLimit({ windowMs: 15 * 60 * 1000, max: 100, message: { error: 'Trop de requêtes.' } }));
+
+// Stricter rate limiter for public POST endpoints (5 per 10 min per IP)
+const publicPostLimiter = rateLimit({
+  windowMs: 10 * 60 * 1000,
+  max: 5,
+  message: { error: 'Trop de requêtes. Réessayez plus tard.' },
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
+// Stricter rate limiter for login (5 attempts per 15 min per IP+username)
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  message: { error: 'Trop de tentatives de connexion. Réessayez plus tard.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => req.ip + ':' + (req.body?.username || 'unknown')
+});
+
+// Stricter rate limiter for /api/stats/visit
+const visitLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 30,
+  message: { error: 'Trop de requêtes.' },
+  standardHeaders: true,
+  legacyHeaders: false
+});
 
 // ── Static & PWA (AVANT le static général pour contrôler les en-têtes) ──
 // Le service worker est servi sans aucun cache : un SW obsolète côté client
@@ -61,11 +115,8 @@ function generateToken() { return crypto.randomBytes(32).toString('hex'); }
 // Wrap async route handlers so rejected promises reach the error middleware
 const asyncHandler = fn => (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
 
-// Heures de rendez-vous proposées (source unique de vérité)
-const TIME_SLOTS = ['08:00','09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00'];
-
 // Clés autorisées pour les paramètres publics du site
-const ALLOWED_SETTINGS = ['email', 'phone', 'whatsapp', 'hours', 'address', 'welcome_msg', 'site_title'];
+const ALLOWED_SETTINGS = ['email', 'phone', 'whatsapp', 'hours', 'address', 'welcome_msg', 'site_title', 'time_slots', 'service_cities', 'facebook_url', 'instagram_url'];
 
 const cleanInt = (value, def, min, max) => {
   const n = parseInt(value, 10);
@@ -75,13 +126,31 @@ const cleanInt = (value, def, min, max) => {
 
 const isValidEmail = value => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || ''));
 
+// Get time slots from settings (with fallback to default)
+async function getTimeSlots() {
+  const settings = await queryAll('SELECT key, value FROM settings WHERE key IN (?, ?)', ['time_slots', 'service_cities']);
+  const timeSlotsStr = settings.find(s => s.key === 'time_slots')?.value;
+  if (timeSlotsStr) {
+    return timeSlotsStr.split(',').map(s => s.trim()).filter(Boolean);
+  }
+  return ['08:00','09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00'];
+}
+
 // Sessions are stored in the database so they survive serverless cold starts
 async function authMiddleware(req, res, next) {
   try {
     const token = req.headers.authorization?.replace('Bearer ', '');
     if (!token) return res.status(401).json({ error: 'Non autorisé' });
-    const session = await queryOne('SELECT admin_id FROM sessions WHERE token = ?', [token]);
+    const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+    const session = await queryOne('SELECT admin_id, created_at FROM sessions WHERE token = ?', [tokenHash]);
     if (!session) return res.status(401).json({ error: 'Non autorisé' });
+    // Check session max age (7 days)
+    const createdAt = new Date(session.created_at).getTime();
+    const now = Date.now();
+    if (now - createdAt > 7 * 24 * 60 * 60 * 1000) {
+      await runSql('DELETE FROM sessions WHERE token = ?', [tokenHash]);
+      return res.status(401).json({ error: 'Session expirée' });
+    }
     req.adminId = session.admin_id;
     next();
   } catch (err) {
@@ -93,22 +162,36 @@ async function authMiddleware(req, res, next) {
 //  AUTH
 // ══════════════════════════════════════
 
-app.post('/api/auth/login', asyncHandler(async (req, res) => {
+app.post('/api/auth/login', loginLimiter, asyncHandler(async (req, res) => {
   const { username, password } = req.body;
   if (!username || !password) return res.status(400).json({ error: 'Champs requis' });
   const user = await queryOne('SELECT * FROM admin_users WHERE username = ?', [username]);
-  if (!user || !bcrypt.compareSync(password, user.password_hash)) {
+  // Constant-time comparison: always hash compare even if user not found
+  const hashToCompare = user?.password_hash || '$2a$10$invalidinvalidinvalidinvalidinva';
+  const valid = await bcrypt.compare(password, hashToCompare);
+  if (!user || !valid) {
     return res.status(401).json({ error: 'Identifiants incorrects' });
   }
+  // Block login if password is still the default 'cnh2026'
+  if (await bcrypt.compare('cnh2026', user.password_hash)) {
+    await runSql('DELETE FROM sessions WHERE admin_id = ?', [user.id]);
+    console.warn(`🚫 Connexion bloquée pour admin "${username}" : mot de passe par défaut détecté. Lancez : node scripts/set-password.js`);
+    return res.status(403).json({ error: 'Mot de passe par défaut détecté. Changez-le avec scripts/set-password.js avant de vous connecter.' });
+  }
   const token = generateToken();
-  await runSql('INSERT INTO sessions (token, admin_id) VALUES (?, ?)', [token, user.id]);
-  // Cleanup: drop sessions older than 30 days
-  await runSql("DELETE FROM sessions WHERE created_at < datetime('now', '-30 days')");
+  const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+  await runSql('INSERT INTO sessions (token, admin_id) VALUES (?, ?)', [tokenHash, user.id]);
+  // Cleanup: drop sessions older than 7 days
+  await runSql("DELETE FROM sessions WHERE created_at < datetime('now', '-7 days')");
   res.json({ token, username: user.username });
 }));
 
 app.post('/api/auth/logout', authMiddleware, asyncHandler(async (req, res) => {
-  await runSql('DELETE FROM sessions WHERE token = ?', [req.headers.authorization?.replace('Bearer ', '')]);
+  const token = req.headers.authorization?.replace('Bearer ', '');
+  if (token) {
+    const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+    await runSql('DELETE FROM sessions WHERE token = ?', [tokenHash]);
+  }
   res.json({ message: 'OK' });
 }));
 
@@ -118,14 +201,27 @@ app.get('/api/auth/verify', authMiddleware, (req, res) => { res.json({ valid: tr
 //  CONTACTS
 // ══════════════════════════════════════
 
-app.post('/api/contacts', asyncHandler(async (req, res) => {
-  const { name, email, phone, service, message, date } = req.body;
+app.post('/api/contacts', publicPostLimiter, asyncHandler(async (req, res) => {
+  const { name, email, phone, service, message, date, hp, consent } = req.body;
+  // Honeypot check (server-side)
+  if (hp && hp.trim() !== '') {
+    return res.status(200).json({ success: true });
+  }
   if (!name || !email || !phone || !service || !message) return res.status(400).json({ error: 'Tous les champs sont requis' });
   if (!isValidEmail(email)) return res.status(400).json({ error: 'Email invalide' });
+  // Validation lengths
+  if (name.length > 80 || email.length > 120 || phone.length > 25 || service.length > 80 || message.length > 1000) {
+    return res.status(400).json({ error: 'Données trop longues' });
+  }
+  if (!consent) return res.status(400).json({ error: 'Consentement requis' });
   try {
-    const id = await runSql('INSERT INTO contacts (name, email, phone, service, message, date_wished) VALUES (?, ?, ?, ?, ?, ?)',
+    const id = await runSql('INSERT INTO contacts (name, email, phone, service, message, date_wished, consent_at) VALUES (?, ?, ?, ?, ?, ?, datetime(\'now\'))',
       [name, email, phone, service, message, date || null]);
     await runSql("INSERT INTO stats (type, value) VALUES ('form_submission', 1)");
+    // Send emails (non-blocking)
+    const contactData = { id, name, email, phone, service, message, date_wished: date || null };
+    notifyNewContact(contactData).catch(err => console.error('[Mailer] notifyNewContact failed:', err.message));
+    sendClientConfirmation({ ...contactData, name, email }, true).catch(err => console.error('[Mailer] sendClientConfirmation failed:', err.message));
     res.json({ success: true, id });
   } catch (err) {
     console.error(err);
@@ -159,25 +255,62 @@ app.patch('/api/contacts/:id', authMiddleware, asyncHandler(async (req, res) => 
 app.get('/api/reservations/slots', asyncHandler(async (req, res) => {
   const { date } = req.query;
   if (!date) return res.status(400).json({ error: 'Date requise' });
+  // Validate date format
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(date))) return res.status(400).json({ error: 'Date invalide' });
+  const timeSlots = await getTimeSlots();
   const booked = (await queryAll("SELECT reservation_time FROM reservations WHERE reservation_date = ? AND status IN ('pending','confirmed')", [date])).map(r => r.reservation_time);
-  res.json({ date, slots: TIME_SLOTS.map(time => ({ time, available: !booked.includes(time) })) });
+  res.json({ date, slots: timeSlots.map(time => ({ time, available: !booked.includes(time) })) });
 }));
 
-app.post('/api/reservations', asyncHandler(async (req, res) => {
-  const { name, email, phone, vehicle_type, vehicle_plate, service, address, city, postal_code, date, time, notes, extras } = req.body;
+app.post('/api/reservations', publicPostLimiter, asyncHandler(async (req, res) => {
+  const { name, email, phone, vehicle_type, vehicle_plate, service, address, city, postal_code, date, time, notes, extras, hp, consent } = req.body;
+  // Honeypot check (server-side)
+  if (hp && hp.trim() !== '') {
+    return res.status(200).json({ success: true });
+  }
+  // Validate required fields
   if (!name || !email || !phone || !vehicle_type || !service || !address || !city || !date) {
     return res.status(400).json({ error: 'Tous les champs obligatoires sont requis' });
   }
+  // Validate types
+  if (typeof name !== 'string' || typeof email !== 'string' || typeof phone !== 'string' ||
+      typeof vehicle_type !== 'string' || typeof service !== 'string' || typeof address !== 'string' ||
+      typeof city !== 'string') {
+    return res.status(400).json({ error: 'Types de données invalides' });
+  }
   if (!isValidEmail(email)) return res.status(400).json({ error: 'Email invalide' });
+  // Validate lengths
+  if (name.length > 80 || email.length > 120 || phone.length > 25 || vehicle_type.length > 80 ||
+      service.length > 80 || address.length > 150 || city.length > 80 ||
+      (postal_code && postal_code.length > 10) || (vehicle_plate && vehicle_plate.length > 15) ||
+      (notes && notes.length > 1000)) {
+    return res.status(400).json({ error: 'Données trop longues' });
+  }
+  if (!consent) return res.status(400).json({ error: 'Consentement requis' });
+  // Validate date format and range
   if (!/^\d{4}-\d{2}-\d{2}$/.test(String(date))) return res.status(400).json({ error: 'Date invalide' });
+  const requestedDate = new Date(date + 'T00:00:00');
+  const today = new Date(); today.setHours(0,0,0,0);
+  const maxDate = new Date(today); maxDate.setDate(maxDate.getDate() + 90);
+  if (requestedDate < today) return res.status(400).json({ error: 'Date dans le passé' });
+  if (requestedDate > maxDate) return res.status(400).json({ error: 'Date trop lointaine (max 90 jours)' });
   // Créneau horaire facultatif pour les prestations « Sur devis » : l'horaire réel
   // est convenu avec le client lors de l'établissement du devis.
-  if (time && !TIME_SLOTS.includes(time)) return res.status(400).json({ error: 'Heure invalide' });
+  const timeSlots = await getTimeSlots();
+  if (time && !timeSlots.includes(time)) return res.status(400).json({ error: 'Heure invalide' });
   const isQuoteService = await isQuoteServiceName(service);
   if (!time && !isQuoteService) return res.status(400).json({ error: 'Heure requise' });
+  // Validate vehicle_type against active pricing
+  const vehicleRow = await queryOne('SELECT name FROM pricing WHERE active = 1 AND category = ? AND name = ?', ['vehicle', vehicle_type]);
+  if (!vehicleRow) return res.status(400).json({ error: 'Type de véhicule invalide' });
+  // Validate extras against active pricing
   const extraNames = Array.isArray(extras)
     ? extras.map(e => String(e).trim()).filter(Boolean)
     : (typeof extras === 'string' && extras.trim() ? extras.split(',').map(e => e.trim()).filter(Boolean) : []);
+  for (const extraName of extraNames) {
+    const extraRow = await queryOne('SELECT name FROM pricing WHERE active = 1 AND category = ? AND name = ?', ['extra', extraName]);
+    if (!extraRow) return res.status(400).json({ error: 'Option invalide : ' + extraName });
+  }
   const cleanExtras = extraNames.length ? extraNames.join(', ').slice(0, 500) : null;
   const { total: priceTotal, surcharge: vehicleSurcharge } = await computeReservationPricing(service, extraNames, vehicle_type);
   const existing = time
@@ -191,9 +324,13 @@ app.post('/api/reservations', asyncHandler(async (req, res) => {
     ? notesValue + ' [Horaire à convenir — prestation sur devis]'
     : (isQuoteService && !time ? 'Horaire à convenir — prestation sur devis' : notesValue);
   try {
-    const id = await runSql('INSERT INTO reservations (name, email, phone, vehicle_type, vehicle_plate, service, address, city, postal_code, reservation_date, reservation_time, notes, extras, price_total, vehicle_surcharge) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+    const id = await runSql('INSERT INTO reservations (name, email, phone, vehicle_type, vehicle_plate, service, address, city, postal_code, reservation_date, reservation_time, notes, extras, price_total, vehicle_surcharge, consent_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime(\'now\'))',
       [name, email, phone, vehicle_type, vehicle_plate || null, service, address, city, postal_code || null, date, timeValue, notesForDb, cleanExtras, priceTotal, vehicleSurcharge]);
     await runSql("INSERT INTO stats (type, value) VALUES ('reservation', 1)");
+    // Send emails (non-blocking)
+    const reservationData = { id, name, email, phone, vehicle_type, vehicle_plate: vehicle_plate || null, service, address, city, postal_code: postal_code || null, reservation_date: date, reservation_time: timeValue, notes: notesForDb, extras: cleanExtras, price_total: priceTotal, vehicle_surcharge: vehicleSurcharge };
+    notifyNewReservation(reservationData).catch(err => console.error('[Mailer] notifyNewReservation failed:', err.message));
+    sendClientConfirmation(reservationData).catch(err => console.error('[Mailer] sendClientConfirmation failed:', err.message));
     res.json({ success: true, id });
   } catch (err) {
     console.error(err);
@@ -220,7 +357,11 @@ app.get('/api/reservations', authMiddleware, asyncHandler(async (req, res) => {
 const RESERVATION_STATUS_LABELS = { pending: 'En attente', confirmed: 'Confirmé', completed: 'Terminé', cancelled: 'Annulé' };
 
 function csvCell(value) {
-  const s = value === null || value === undefined ? '' : String(value);
+  let s = value === null || value === undefined ? '' : String(value);
+  // Neutralize formula injection: prefix with ' if value starts with = + - @ tab or carriage return
+  if (/^[=+\-@\t\r\n]/.test(s)) {
+    s = "'" + s;
+  }
   return '"' + s.replace(/"/g, '""') + '"';
 }
 
@@ -309,7 +450,7 @@ app.get('/api/stats/dashboard', authMiddleware, asyncHandler(async (req, res) =>
   });
 }));
 
-app.post('/api/stats/visit', asyncHandler(async (req, res) => {
+app.post('/api/stats/visit', visitLimiter, asyncHandler(async (req, res) => {
   await runSql("INSERT INTO stats (type, value) VALUES ('visit', 1)");
   res.json({ success: true });
 }));
@@ -523,16 +664,22 @@ app.get('/api/testimonials', asyncHandler(async (req, res) => {
 }));
 
 // Public submission — published on the site only after admin approval
-app.post('/api/testimonials', asyncHandler(async (req, res) => {
-  const cleanName = String(req.body?.name || '').trim();
-  const cleanMessage = String(req.body?.message || '').trim();
-  const cleanLocation = String(req.body?.location || '').trim();
-  const cleanRating = Math.min(5, Math.max(1, parseInt(req.body?.rating, 10) || 5));
+app.post('/api/testimonials', publicPostLimiter, asyncHandler(async (req, res) => {
+  const { name, message, location, rating, hp, consent } = req.body;
+  // Honeypot check (server-side)
+  if (hp && hp.trim() !== '') {
+    return res.status(200).json({ success: true });
+  }
+  if (!consent) return res.status(400).json({ error: 'Consentement requis' });
+  const cleanName = String(name || '').trim();
+  const cleanMessage = String(message || '').trim();
+  const cleanLocation = String(location || '').trim();
+  const cleanRating = Math.min(5, Math.max(1, parseInt(rating, 10) || 5));
   if (cleanName.length < 2 || cleanName.length > 80) return res.status(400).json({ error: 'Nom requis (2 à 80 caractères)' });
   if (cleanMessage.length < 5 || cleanMessage.length > 1000) return res.status(400).json({ error: 'Message requis (5 à 1000 caractères)' });
   if (cleanLocation.length > 80) return res.status(400).json({ error: 'Localisation trop longue' });
   try {
-    const id = await runSql('INSERT INTO testimonials (name, location, rating, message, approved) VALUES (?, ?, ?, ?, 0)',
+    const id = await runSql('INSERT INTO testimonials (name, location, rating, message, approved, consent_at) VALUES (?, ?, ?, ?, 0, datetime(\'now\'))',
       [cleanName, cleanLocation || null, cleanRating, cleanMessage]);
     res.json({ success: true, id, message: 'Merci ! Votre avis sera publié après validation.' });
   } catch (err) {
@@ -562,6 +709,28 @@ app.delete('/api/testimonials/:id', authMiddleware, asyncHandler(async (req, res
   await runSql('DELETE FROM testimonials WHERE id = ?', [parseInt(req.params.id)]);
   res.json({ success: true });
 }));
+
+// ══════════════════════════════════════
+//  REDIRECT MIDDLEWARE (vercel.app -> cnhservices.ca, www -> non-www)
+// ══════════════════════════════════════
+app.use((req, res, next) => {
+  const host = req.headers.host || '';
+  const isVercel = host.includes('.vercel.app');
+  const isWww = host.startsWith('www.');
+  const targetHost = 'cnhservices.ca';
+  
+  if (isVercel || isWww) {
+    const newUrl = `https://${targetHost}${req.originalUrl}`;
+    return res.redirect(301, newUrl);
+  }
+  next();
+});
+
+// ══════════════════════════════════════
+//  LEGAL PAGES
+// ══════════════════════════════════════
+app.get('/confidentialite', (req, res) => res.sendFile(path.join(__dirname, 'public', 'confidentialite.html')));
+app.get('/conditions', (req, res) => res.sendFile(path.join(__dirname, 'public', 'conditions.html')));
 
 // ══════════════════════════════════════
 //  SPA FALLBACK

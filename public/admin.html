@@ -332,6 +332,8 @@
                             <div class="form-group"><label>Heures d'ouverture</label><input type="text" id="setHours"></div>
                             <div class="form-group"><label>Zone de service</label><input type="text" id="setAddress"></div>
                             <div class="form-group"><label>Message d'accueil WhatsApp</label><input type="text" id="setMsg"></div>
+                            <div class="form-group"><label>URL Facebook</label><input type="url" id="setFacebookUrl"></div>
+                            <div class="form-group"><label>URL Instagram</label><input type="url" id="setInstagramUrl"></div>
                         </div>
                         <div style="margin-top:24px;display:flex;gap:12px">
                             <button class="btn btn-primary" id="saveSettings"><i class="fas fa-check"></i> Sauvegarder</button>
@@ -544,7 +546,7 @@
             html += '<tr><td data-label="#">#'+r.id+'</td><td data-label="Nom">'+esc(r.name)+'</td><td data-label="Service">'+esc(r.service)+'</td>';
             if (full) {
                 html += '<td data-label="Véhicule">'+esc(r.vehicle_type)+'</td>';
-                html += '<td data-label="Extras" style="max-width:220px" title="'+esc(r.extras || '—')+'">'+esc(r.extras || '—')+'</td>';
+                html += '<td data-label="Extras" style="max-width:220px" title="'+escAttr(r.extras || '—')+'">'+esc(r.extras || '—')+'</td>';
             }
             html += '<td data-label="Date">'+r.reservation_date+'</td><td data-label="Heure">'+(r.reservation_time || '—')+'</td>';
             html += '<td data-label="Total" style="white-space:nowrap;font-weight:700;color:var(--blue)">'+formatTotal(r.price_total)+'</td>';
@@ -609,7 +611,7 @@
             var html = '<table><thead><tr><th>Nom</th><th>Email</th><th>Téléphone</th><th>Service</th><th>Message</th><th>Statut</th><th>Actions</th></tr></thead><tbody>';
             list.forEach(function(c) {
                 html += '<tr><td data-label="Nom">'+esc(c.name)+'</td><td data-label="Email">'+esc(c.email)+'</td><td data-label="Téléphone">'+esc(c.phone)+'</td><td data-label="Service">'+esc(c.service)+'</td>';
-                html += '<td data-label="Message" style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+esc(c.message)+'">'+esc(c.message)+'</td>';
+                html += '<td data-label="Message" style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+escAttr(c.message)+'">'+esc(c.message)+'</td>';
                 html += '<td data-label="Statut"><span class="badge '+c.status+'">'+(labels[c.status]||c.status)+'</span></td>';
                 html += '<td data-type="actions" style="white-space:nowrap">';
                 if (c.status === 'new') html += '<button class="btn btn-sm btn-icon btn-amber" title="Marquer en cours" onclick="updateContact('+c.id+',\'in_progress\')"><i class="fas fa-spinner"></i></button> ';
@@ -644,7 +646,7 @@
                 var stars = '';
                 for (var i = 1; i <= 5; i++) stars += i <= (t.rating || 5) ? '<i class="fas fa-star"></i>' : '<i class="far fa-star"></i>';
                 html += '<tr><td data-label="Nom">'+esc(t.name)+'</td><td data-label="Ville">'+esc(t.location || '—')+'</td><td data-label="Note" style="color:var(--amber);white-space:nowrap">'+stars+'</td>';
-                html += '<td data-label="Message" style="max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+esc(t.message)+'">'+esc(t.message)+'</td>';
+                html += '<td data-label="Message" style="max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+escAttr(t.message)+'">'+esc(t.message)+'</td>';
                 html += '<td data-label="Statut"><span class="badge ' + (t.approved ? 'confirmed' : 'pending') + '">' + (t.approved ? 'Publié' : 'En attente') + '</span></td>';
                 html += '<td data-label="Date">' + (t.created_at || '').slice(0, 10) + '</td>';
                 html += '<td data-type="actions" style="white-space:nowrap">';
@@ -687,6 +689,8 @@
             document.getElementById('setHours').value = s.hours || '';
             document.getElementById('setAddress').value = s.address || '';
             document.getElementById('setMsg').value = s.welcome_msg || '';
+            document.getElementById('setFacebookUrl').value = s.facebook_url || '';
+            document.getElementById('setInstagramUrl').value = s.instagram_url || '';
         });
     }
 
@@ -697,7 +701,9 @@
             whatsapp: document.getElementById('setWhatsapp').value,
             hours: document.getElementById('setHours').value,
             address: document.getElementById('setAddress').value,
-            welcome_msg: document.getElementById('setMsg').value
+            welcome_msg: document.getElementById('setMsg').value,
+            facebook_url: document.getElementById('setFacebookUrl').value,
+            instagram_url: document.getElementById('setInstagramUrl').value
         }).then(function() { toast('Paramètres sauvegardés !', 'success'); });
     });
 
@@ -706,17 +712,23 @@
         document.getElementById('setPhone').value = '+1 450 230 2509';
         document.getElementById('setWhatsapp').value = '14502302509';
         document.getElementById('setHours').value = 'Lun-Ven: 8h–18h | Sam: 9h–16h | Dim: Sur rendez-vous';
-        document.getElementById('setAddress').value = 'Grand Montréal & Laurentides';
+        document.getElementById('setAddress').value = 'Grand Montréal & Rive-Sud';
         document.getElementById('setMsg').value = 'Bonjour CNH Service, je souhaite un devis pour un lavage auto.';
+        document.getElementById('setFacebookUrl').value = 'https://web.facebook.com/cnhservices';
+        document.getElementById('setInstagramUrl').value = '';
     });
 
-    function esc(s) { var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+function esc(s) {
+        var d = document.createElement('div');
+        d.textContent = s;
+        return d.innerHTML.replace(/"/g, '"').replace(/'/g, ''');
+    }
 
     // Échappement pour insertion dans un attribut ou un textarea
     function escAttr(s) {
         return String(s == null ? '' : s)
-            .replace(/&/g, '&amp;').replace(/"/g, '&quot;')
-            .replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            .replace(/&/g, '&').replace(/"/g, '"')
+            .replace(/'/g, ''').replace(/</g, '<').replace(/>/g, '>');
     }
 
     function formatTotal(v) {
