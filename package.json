@@ -6,7 +6,16 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node server.js",
-    "backup": "node scripts/backup-db.js"
+    "backup": "node scripts/backup-db.js",
+    "test": "node --test test/*.test.js",
+    "purge": "node scripts/purge-old-data.js",
+    "build:icons": "node scripts/build-icons.js",
+    "build:screenshots": "node scripts/build-screenshots.js",
+    "build:svg-sprite": "node scripts/build-svg-sprite.js",
+    "build": "npm run build:icons && npm run build:svg-sprite",
+    "lint": "node --check server.js && node --check database.js && node --check scripts/*.js",
+    "prettier:check": "npx prettier --check \"public/**/*.html\" \"public/**/*.css\" \"public/**/*.js\" \"scripts/*.js\"",
+    "prettier:write": "npx prettier --write \"public/**/*.html\" \"public/**/*.css\" \"public/**/*.js\" \"scripts/*.js\""
   },
   "dependencies": {
     "@libsql/client": "^0.18.0",
@@ -16,5 +25,16 @@
     "express-rate-limit": "^7.4.0",
     "helmet": "^8.0.0",
     "sql.js": "^1.11.0"
+  },
+  "devDependencies": {
+    "playwright": "^1.45.0",
+    "prettier": "^3.3.0",
+    "sharp": "^0.33.0",
+    "supertest": "^7.3.1",
+    "svgo": "^3.3.0",
+    "svgson": "^5.3.0"
+  },
+  "engines": {
+    "node": ">=20"
   }
 }

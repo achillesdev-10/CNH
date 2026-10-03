@@ -6,6 +6,7 @@
     <title>Admin | CNH Service</title>
     <meta name="robots" content="noindex">
     <meta name="theme-color" content="#0f172a">
+    <link rel="canonical" href="https://cnhservices.ca/admin">
     <link rel="manifest" href="/manifest.webmanifest">
     <link rel="icon" type="image/svg+xml" href="/icons/icon.svg">
     <link rel="icon" type="image/png" sizes="32x32" href="/icons/icon-32.png">
@@ -17,11 +18,13 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="preload" as="style" href="/icons/sprite.svg">
+    <link rel="stylesheet" href="/icons/sprite.svg" media="print" onload="this.media='all'">
+    <script>document.documentElement.classList.add('js');</script>
     <style>
         *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
         html,body{max-width:100%;overflow-x:clip}
-        body{font-family:'Inter',sans-serif;font-size:16px;line-height:1.6;color:#1e293b;background:#f0f4f8;min-height:100vh}
+        body{font-family:'Inter',sans-serif;font-size:16px;line-height:1.6;color:#1e293b;background:#f0f4f8;min-height:100vh;padding-bottom:env(safe-area-inset-bottom,0px)}
         :root{--blue:#0ea5e9;--blue-dark:#0284c7;--blue-deeper:#0369a1;--blue-light:#e0f2fe;--navy:#0f172a;--slate:#1e293b;--gray-100:#f1f5f9;--gray-200:#e2e8f0;--gray-300:#cbd5e1;--gray-400:#94a3b8;--gray-500:#64748b;--white:#fff;--green:#10b981;--green-dark:#059669;--red:#ef4444;--amber:#f59e0b;--shadow-sm:0 1px 4px rgba(0,0,0,.05);--shadow-md:0 4px 16px rgba(0,0,0,.08);--shadow-lg:0 10px 30px rgba(0,0,0,.1);--radius:12px;--radius-lg:16px;--transition:.3s cubic-bezier(.4,0,.2,1)}
 
         /* ── Logo ── */
@@ -45,6 +48,14 @@
         /* ── Focus visible (accessibilité clavier) ── */
         a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid rgba(14,165,233,.45);outline-offset:2px}
 
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+
         /* ── Login ── */
         .login-overlay{position:fixed;inset:0;background:linear-gradient(135deg,#f0f9ff 0%,#e0f2fe 50%,#f0f4f8 100%);display:flex;align-items:center;justify-content:center;z-index:2000}
         .login-overlay.hidden{display:none}
@@ -55,7 +66,7 @@
         .login-card p{color:var(--gray-500);font-size:.9rem;margin-bottom:28px}
         .login-card .form-group{text-align:left;margin-bottom:16px}
         .login-card .form-group label{display:block;font-size:.8rem;font-weight:600;color:var(--slate);margin-bottom:6px}
-        .login-card input{width:100%;padding:13px 16px;border:2px solid var(--gray-200);border-radius:12px;font-family:'Inter',sans-serif;font-size:.9rem;background:var(--gray-100);transition:all .3s ease}
+        .login-card input{width:100%;padding:13px 16px;border:2px solid var(--gray-200);border-radius:12px;font-family:'Inter',sans-serif;font-size:1rem;background:var(--gray-100);transition:all .3s ease}
         .login-card input:focus{border-color:var(--blue);outline:none;background:var(--white);box-shadow:0 0 0 4px rgba(14,165,233,.1)}
         .login-error{color:var(--red);font-size:.85rem;margin-top:10px;display:none;font-weight:500}
         .login-card .btn-primary{padding:14px;font-size:1rem;border-radius:12px;margin-top:8px}
@@ -63,7 +74,7 @@
         /* ── Layout ── */
         .admin-layout{display:none;min-height:100vh;animation:fadeSlideUp .5s ease}
         .admin-layout.active{display:block}
-        .topbar{background:rgba(255,255,255,.97);backdrop-filter:blur(20px) saturate(180%);border-bottom:1px solid var(--gray-200);padding:14px 28px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:100;transition:box-shadow .3s ease}
+        .topbar{background:rgba(255,255,255,.97);backdrop-filter:blur(20px) saturate(180%);border-bottom:1px solid var(--gray-200);padding:14px 28px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:100;transition:box-shadow .3s ease;padding-top:calc(14px + env(safe-area-inset-top,0px))}
         .topbar.scrolled{box-shadow:0 1px 16px rgba(0,0,0,.06)}
         .topbar-left{display:flex;align-items:center;gap:14px}
         .topbar-left h2{font-size:1rem;color:var(--slate);font-weight:700}
@@ -97,7 +108,7 @@
         .card:hover{box-shadow:var(--shadow-md)}
         .card-header{padding:18px 22px;border-bottom:1px solid var(--gray-200);display:flex;justify-content:space-between;align-items:center}
         .card-header h3{font-size:.95rem;color:var(--slate);display:flex;align-items:center;gap:8px;font-weight:700}
-        .card-body{padding:22px}
+        .card-body{padding:22px;padding-bottom:calc(22px + env(safe-area-inset-bottom,0px))}
 
         /* ── Table ── */
         .table-wrap{overflow-x:auto}
@@ -130,7 +141,7 @@
         .settings-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
         .settings-grid .form-group{margin-bottom:16px}
         .settings-grid label{display:block;font-size:.8rem;font-weight:600;color:var(--slate);margin-bottom:6px}
-        .settings-grid input,.settings-grid textarea{width:100%;padding:12px 16px;border:2px solid var(--gray-200);border-radius:12px;font-family:'Inter',sans-serif;font-size:.9rem;background:var(--gray-100);transition:all .3s ease}
+        .settings-grid input,.settings-grid textarea{width:100%;padding:12px 16px;border:2px solid var(--gray-200);border-radius:12px;font-family:'Inter',sans-serif;font-size:1rem;background:var(--gray-100);transition:all .3s ease}
         .settings-grid input:focus,.settings-grid textarea:focus{border-color:var(--blue);outline:none;background:var(--white);box-shadow:0 0 0 4px rgba(14,165,233,.1)}
 
         /* ── Toast ── */
@@ -143,7 +154,7 @@
         /* ── Modale de confirmation ── */
         .modal-overlay{position:fixed;inset:0;background:rgba(2,6,23,.55);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:9998;padding:20px;opacity:0;visibility:hidden;transition:all .3s ease}
         .modal-overlay.open{opacity:1;visibility:visible}
-        .modal{background:var(--white);border-radius:20px;padding:28px;width:100%;max-width:400px;box-shadow:0 24px 60px rgba(2,6,23,.3);text-align:center;transform:scale(.92) translateY(10px);transition:transform .3s cubic-bezier(.34,1.56,.64,1)}
+        .modal{background:var(--white);border-radius:20px;padding:28px;width:100%;max-width:400px;box-shadow:0 24px 60px rgba(2,6,23,.3);text-align:center;transform:scale(.92) translateY(10px);transition:transform .3s cubic-bezier(.34,1.56,.64,1);padding-bottom:calc(28px + env(safe-area-inset-bottom,0px))}
         .modal-overlay.open .modal{transform:scale(1) translateY(0)}
         .modal-icon{width:64px;height:64px;border-radius:50%;margin:0 auto 16px;display:flex;align-items:center;justify-content:center;font-size:1.5rem}
         .modal-icon.danger{background:rgba(239,68,68,.1);color:var(--red)}
@@ -706,7 +717,7 @@
         document.getElementById('setPhone').value = '+1 450 230 2509';
         document.getElementById('setWhatsapp').value = '14502302509';
         document.getElementById('setHours').value = 'Lun-Ven: 8h–18h | Sam: 9h–16h | Dim: Sur rendez-vous';
-        document.getElementById('setAddress').value = 'Grand Montréal & Laurentides';
+        document.getElementById('setAddress').value = 'Grand Montréal & Rive-Sud';
         document.getElementById('setMsg').value = 'Bonjour CNH Service, je souhaite un devis pour un lavage auto.';
     });
 
