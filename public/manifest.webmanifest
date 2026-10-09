@@ -1,62 +1,83 @@
 {
   "name": "CNH Service",
   "short_name": "CNH Service",
-  "description": "Service de lavage automobile professionnel à domicile — Grand Montréal & Laurentides. Réservez votre lavage, consultez nos services et tarifs directement depuis l'application.",
+  "description": "Service de lavage automobile professionnel à domicile — Grand Montréal & Rive-Sud. Réservez votre lavage, consultez nos services et tarifs directement depuis l'application.",
   "id": "/",
   "start_url": "/?source=pwa",
   "scope": "/",
   "display": "standalone",
-  "display_override": ["standalone", "minimal-ui", "browser"],
+  "display_override": [
+    "standalone",
+    "minimal-ui",
+    "browser"
+  ],
   "orientation": "portrait",
   "theme_color": "#0f172a",
   "background_color": "#0f172a",
-  "lang": "fr",
+  "lang": "fr-CA",
   "dir": "ltr",
-  "categories": ["business", "utilities", "lifestyle"],
-  "icons": [
-    { "src": "/icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
-    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "/icons/icon-192-maskable.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
-    { "src": "/icons/icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  "categories": [
+    "business",
+    "utilities",
+    "lifestyle"
   ],
-  "screenshots": [
+  "icons": [
     {
-      "src": "/screenshots/accueil-desktop.webp",
-      "sizes": "1280x720",
-      "type": "image/webp",
-      "form_factor": "wide",
-      "label": "Page d'accueil de CNH Service sur ordinateur : services, forfaits et tarifs"
+      "src": "/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
     },
     {
-      "src": "/screenshots/accueil-mobile.webp",
-      "sizes": "720x1280",
-      "type": "image/webp",
-      "form_factor": "narrow",
-      "label": "Page d'accueil de CNH Service sur téléphone, avec le bouton de réservation"
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
     },
     {
-      "src": "/screenshots/reservation-mobile.webp",
-      "sizes": "720x1280",
-      "type": "image/webp",
-      "form_factor": "narrow",
-      "label": "Page de réservation de CNH Service : choix du forfait, de la date et du créneau horaire"
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-192-maskable.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icons/icon-512-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ],
+  "screenshots": [],
   "shortcuts": [
     {
       "name": "Réserver un lavage",
       "short_name": "Réserver",
       "description": "Réserver un lavage auto à domicile",
       "url": "/reservation?source=pwa",
-      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+      "icons": [
+        {
+          "src": "/icons/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
     },
     {
       "name": "Nous contacter",
       "short_name": "Contact",
       "description": "Formulaire de contact et coordonnées",
-      "url": "/#contact?source=pwa",
-      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+      "url": "/?source=pwa#contact",
+      "icons": [
+        {
+          "src": "/icons/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
     }
   ]
 }
