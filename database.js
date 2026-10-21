@@ -107,7 +107,7 @@ const DEFAULT_PRICING = [
   { category: 'service', name: 'Detailing Complet', price: 85, icon: 'fa-wand-magic-sparkles', price_from: 1, bookable: 1, sort_order: 3, description: 'Lavage extérieur et intérieur complet + cire, dressing des pneus et finition premium.' },
   { category: 'service', name: 'Nettoyage Moteur', price: 55, icon: 'fa-gears', price_from: 1, bookable: 1, sort_order: 4, description: 'Nettoyage en profondeur du compartiment moteur avec dégraissant professionnel.' },
   { category: 'service', name: 'Protection Cire', price: 65, icon: 'fa-shield-halved', price_from: 1, bookable: 1, sort_order: 5, description: 'Application de cire haute protection pour garder votre voiture brillante plus longtemps.' },
-  { category: 'service', name: 'Tous types de véhicules', price: 120, icon: 'fa-truck-pickup', price_from: 0, bookable: 0, sort_order: 6, description: 'Berline, VUS, minivan, camion ou pick-up : le même tarif unique de 120 $ pour un lavage complet.' },
+  { category: 'service', name: 'Tous types de véhicules', price: 160, icon: 'fa-truck-pickup', price_from: 0, bookable: 0, sort_order: 6, description: 'Berline, VUS, minivan, camion ou pick-up : le même tarif unique de 160 $ pour un lavage complet.' },
   { category: 'service', name: 'Lavage de flotte', price: 0, unit: 'Sur devis', icon: 'fa-truck-fast', price_from: 0, bookable: 1, sort_order: 7, description: 'Lavage de flotte de véhicules de tout genre : Trailler, camion de béton, Boom, pompe à béton. Tarification établie sur devis.' },
 
   // Forfaits (affichés dans la section Tarifs)
@@ -247,12 +247,14 @@ async function seedPricing() {
 // ces lignes du défaut sont insérées si elles sont absentes.
 const PRICING_MIGRATION_ROWS = [
   { category: 'service', name: 'Lavage de flotte', price: 0, unit: 'Sur devis', icon: 'fa-truck-fast', price_from: 0, bookable: 1, sort_order: 7, description: 'Lavage de flotte de véhicules de tout genre : Trailler, camion de béton, Boom, pompe à béton. Tarification établie sur devis.', make_bookable: true, sync_description: true },
+  { category: 'service', name: 'Tous types de véhicules', price: 160, icon: 'fa-truck-pickup', price_from: 0, bookable: 0, sort_order: 6, description: 'Berline, VUS, minivan, camion ou pick-up : le même tarif unique de 160 $ pour un lavage complet.', sync_price: true, sync_description: true },
   { category: 'package', name: 'Premium', price: 160, icon: 'fa-crown', price_from: 0, bookable: 1, sort_order: 3, description: 'Service complet : extérieur, intérieur, cire, moteur, cuir et tapis — tous types de véhicules.', features: ['Tout le forfait Confort', 'Tous types de véhicules (prix fixe)', 'Cire haute protection', 'Nettoyage moteur', 'Traitement cuir/vinyle', 'Nettoyage des tapis'], sync_price: true }
 ];
 
 // Anciennes formulations à remplacer automatiquement dans les bases existantes
 const LEGACY_DESCRIPTIONS = [
-  'Lavage de flotte de véhicules de tout genre : trailers, camions de béton, boom et pompes à béton. Tarification établie sur devis.'
+  'Lavage de flotte de véhicules de tout genre : trailers, camions de béton, boom et pompes à béton. Tarification établie sur devis.',
+  'Berline, VUS, minivan, camion ou pick-up : le même tarif unique de 120 $ pour un lavage complet.'
 ];
 
 // ── Petits helpers SQL valables dans les deux modes ────────────
