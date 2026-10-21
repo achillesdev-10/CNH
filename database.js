@@ -113,7 +113,7 @@ const DEFAULT_PRICING = [
   // Forfaits (affichés dans la section Tarifs)
   { category: 'package', name: 'Essentiel', price: 35, icon: 'fa-star', price_from: 0, bookable: 1, sort_order: 1, description: 'Lavage extérieur complet, jantes, pneus et séchage.', features: ['Lavage extérieur complet', 'Jantes & pneus', 'Essuie-glaces', 'Séchage'] },
   { category: 'package', name: 'Confort', price: 70, icon: 'fa-star', price_from: 0, bookable: 1, sort_order: 2, description: 'Extérieur + intérieur complet (aspiration, tableau de bord, pneus).', features: ['Tout le forfait Essentiel', 'Aspiration intérieure', 'Nettoyage tableau de bord', 'Dressing des pneus', 'Rafraîchissement odeurs'] },
-  { category: 'package', name: 'Premium', price: 120, icon: 'fa-crown', price_from: 0, bookable: 1, sort_order: 3, description: 'Service complet : extérieur, intérieur, cire, moteur, cuir et tapis — tous types de véhicules.', features: ['Tout le forfait Confort', 'Tous types de véhicules (prix fixe)', 'Cire haute protection', 'Nettoyage moteur', 'Traitement cuir/vinyle', 'Nettoyage des tapis'] },
+  { category: 'package', name: 'Premium', price: 160, icon: 'fa-crown', price_from: 0, bookable: 1, sort_order: 3, description: 'Service complet : extérieur, intérieur, cire, moteur, cuir et tapis — tous types de véhicules.', features: ['Tout le forfait Confort', 'Tous types de véhicules (prix fixe)', 'Cire haute protection', 'Nettoyage moteur', 'Traitement cuir/vinyle', 'Nettoyage des tapis'] },
 
   // Types de véhicule : supplément appliqué automatiquement au total de la réservation
   // (montants à 0 $ par défaut — à définir dans l'admin, onglet Tarifs)
@@ -246,7 +246,8 @@ async function seedPricing() {
 // Les bases déjà initialisées ne repassent pas par le seed complet :
 // ces lignes du défaut sont insérées si elles sont absentes.
 const PRICING_MIGRATION_ROWS = [
-  { category: 'service', name: 'Lavage de flotte', price: 0, unit: 'Sur devis', icon: 'fa-truck-fast', price_from: 0, bookable: 1, sort_order: 7, description: 'Lavage de flotte de véhicules de tout genre : Trailler, camion de béton, Boom, pompe à béton. Tarification établie sur devis.', make_bookable: true, sync_description: true }
+  { category: 'service', name: 'Lavage de flotte', price: 0, unit: 'Sur devis', icon: 'fa-truck-fast', price_from: 0, bookable: 1, sort_order: 7, description: 'Lavage de flotte de véhicules de tout genre : Trailler, camion de béton, Boom, pompe à béton. Tarification établie sur devis.', make_bookable: true, sync_description: true },
+  { category: 'package', name: 'Premium', price: 160, icon: 'fa-crown', price_from: 0, bookable: 1, sort_order: 3, description: 'Service complet : extérieur, intérieur, cire, moteur, cuir et tapis — tous types de véhicules.', features: ['Tout le forfait Confort', 'Tous types de véhicules (prix fixe)', 'Cire haute protection', 'Nettoyage moteur', 'Traitement cuir/vinyle', 'Nettoyage des tapis'], sync_price: true }
 ];
 
 // Anciennes formulations à remplacer automatiquement dans les bases existantes
@@ -295,6 +296,16 @@ async function ensurePricingRow(row) {
         await dbRun('UPDATE pricing SET bookable = 1 WHERE category = ? AND name = ? AND bookable = 0', args);
         await dbRun('INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)', [flag, 'done']);
         console.log('✅ Grille tarifaire : « ' + row.name + ' » est désormais réservable en ligne');
+      }
+    }
+    // Migration ponctuelle : appliquer un nouveau prix une seule fois
+    // (le drapeau en settings évite d'écraser un prix modifié ensuite dans l'admin)
+    if (row.sync_price) {
+      const flag = 'pricing_price_' + String(row.name).toLowerCase().replace(/[^a-z0-9]+/g, '_');
+      if (!await settingsGetValue(flag)) {
+        await dbRun('UPDATE pricing SET price = ?, updated_at = datetime(\'now\') WHERE category = ? AND name = ?', [row.price, ...args]);
+        await dbRun('INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)', [flag, String(row.price)]);
+        console.log('✅ Grille tarifaire : prix de « ' + row.name + ' » mis à jour (' + row.price + ' $)');
       }
     }
     // Mise à jour du libellé si la ligne existante porte encore une ancienne version
